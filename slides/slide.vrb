@@ -1,0 +1,7 @@
+\frametitle{Source Code Transform Ex:}
+Code like the following very hard / impossible in source code transform
+\begin{minted}[escapeinside=||]{C++}
+while(error < tolerance) {
+  // ...
+}
+\end{minted}

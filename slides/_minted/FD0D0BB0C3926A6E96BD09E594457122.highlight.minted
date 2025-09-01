@@ -1,0 +1,17 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{calc\PYGZus{}grad}\PYG{p}{(}\PYG{n}{Tape}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{tape}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{tape\PYGZus{}val}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{tape}\PYG{p}{.}\PYG{n}{start}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{while}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{tape}\PYG{p}{.}\PYG{n}{start}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{tape}\PYG{p}{.}\PYG{n}{end}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{op}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{tape}\PYG{p}{.}\PYG{n}{get\PYGZus{}op}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{switch}\PYG{+w}{ }\PYG{n}{op}\PYG{o}{:}
+\PYG{+w}{      }\PYG{k}{case}\PYG{+w}{ }\PYG{n+no}{log\PYGZus{}fun}\PYG{p}{:}
+\PYG{+w}{       }\PYG{n}{op}\PYG{p}{.}\PYG{n}{input}\PYG{p}{(}\PYG{p}{)}\PYG{p}{[}\PYG{l+m+mi}{0}\PYG{p}{]}\PYG{p}{.}\PYG{n}{adj}\PYG{+w}{ }\PYG{o}{+}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{op}\PYG{p}{.}\PYG{n}{output}\PYG{p}{(}\PYG{p}{)}\PYG{p}{[}\PYG{l+m+mi}{0}\PYG{p}{]}\PYG{p}{.}\PYG{n}{adj}\PYG{+w}{ }\PYG{o}{*}
+\PYG{+w}{         }\PYG{l+m+mf}{1.0}\PYG{+w}{ }\PYG{o}{/}\PYG{+w}{ }\PYG{n}{op}\PYG{p}{.}\PYG{n}{input}\PYG{p}{(}\PYG{p}{)}\PYG{p}{[}\PYG{l+m+mi}{0}\PYG{p}{]}\PYG{p}{.}\PYG{n}{val}\PYG{p}{;}
+\PYG{+w}{      }\PYG{k}{case}\PYG{+w}{ }\PYG{n+no}{mul\PYGZus{}fun}\PYG{p}{:}
+\PYG{+w}{       }\PYG{n}{op}\PYG{p}{.}\PYG{n}{input}\PYG{p}{(}\PYG{p}{)}\PYG{p}{[}\PYG{l+m+mi}{0}\PYG{p}{]}\PYG{p}{.}\PYG{n}{adj}\PYG{+w}{ }\PYG{o}{+}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{op}\PYG{p}{.}\PYG{n}{output}\PYG{p}{(}\PYG{p}{)}\PYG{p}{[}\PYG{l+m+mi}{0}\PYG{p}{]}\PYG{p}{.}\PYG{n}{adj}\PYG{+w}{ }\PYG{o}{*}
+\PYG{+w}{         }\PYG{n}{op}\PYG{p}{.}\PYG{n}{input\PYGZus{}val}\PYG{p}{(}\PYG{p}{)}\PYG{p}{[}\PYG{l+m+mi}{1}\PYG{p}{]}\PYG{p}{;}
+\PYG{+w}{       }\PYG{n}{op}\PYG{p}{.}\PYG{n}{input}\PYG{p}{(}\PYG{p}{)}\PYG{p}{[}\PYG{l+m+mi}{1}\PYG{p}{]}\PYG{p}{.}\PYG{n}{adj}\PYG{+w}{ }\PYG{o}{+}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{op}\PYG{p}{.}\PYG{n}{output}\PYG{p}{(}\PYG{p}{)}\PYG{p}{[}\PYG{l+m+mi}{0}\PYG{p}{]}\PYG{p}{.}\PYG{n}{adj}\PYG{+w}{ }\PYG{o}{*}
+\PYG{+w}{         }\PYG{n}{op}\PYG{p}{.}\PYG{n}{input}\PYG{p}{(}\PYG{p}{)}\PYG{p}{[}\PYG{l+m+mi}{0}\PYG{p}{]}\PYG{p}{.}\PYG{n}{val}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{MintedVerbatim}

@@ -1,0 +1,8 @@
+pyproject.toml
+vscode_onedark.py
+pygments_vscode_onedark.egg-info/PKG-INFO
+pygments_vscode_onedark.egg-info/SOURCES.txt
+pygments_vscode_onedark.egg-info/dependency_links.txt
+pygments_vscode_onedark.egg-info/entry_points.txt
+pygments_vscode_onedark.egg-info/requires.txt
+pygments_vscode_onedark.egg-info/top_level.txt

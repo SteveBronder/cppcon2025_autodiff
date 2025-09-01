@@ -1,0 +1,2 @@
+[pygments.styles]
+vscode_onedark = vscode_onedark:VscodeOneDarkStyle

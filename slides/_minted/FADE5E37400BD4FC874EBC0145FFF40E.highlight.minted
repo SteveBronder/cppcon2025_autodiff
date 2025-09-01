@@ -1,0 +1,10 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{vari}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{double}\PYG{+w}{ }\PYG{n}{val}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k+kt}{double}\PYG{+w}{ }\PYG{n}{adj}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{op\PYGZus{}code}\PYG{+w}{ }\PYG{n}{code}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 12 bytes}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{var}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{vari}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{vi\PYGZus{}}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 8 bytes}
+\end{MintedVerbatim}
