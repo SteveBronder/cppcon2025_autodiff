@@ -112,7 +112,7 @@
 % Usage: \CacheMarkBelow[<color>]{<i 0..7>}{<label>}
 \newcommand{\CacheMarkBelow}[3][green!60!black]{%
   \draw[-{Stealth[length=3mm]}, very thick, draw=#1] (#2,-\CacheBelow+0.28) -- (#2,0.02);
-  \node[below, text=#1] at (#2,-\CacheBelow+0.28) {#3};
+  \node[below, anchor=west, text=#1] at (#2,-\CacheBelow-0.2) {#3};
 }
 
 % Optional: adjust how far below the bar the bottom labels/arrows go (in "y units")
@@ -358,6 +358,7 @@ u_g\sim\mathcal N(0,\sigma_u^2).
 \end{frame}
 
 \begin{frame}{Impl Matters!}
+  TODO: QR code here
 \begin{figure}
 \centerline{\includegraphics[scale=.5]{img/combined_regression_plot.png}}
 \caption{Benchmark for $f'$ given $f = y\sim N(X\theta,\sigma)$}
@@ -654,41 +655,21 @@ $$z = \log(x*y)$$
 
 \note{We can think of AD operations as a function returning functions for the forward pass and the reverse pass}
 
-\begin{frame}[fragile]{Cool graph math, how do we do this in a computer?}
-\begin{minted}{C++}
-auto foo_fwd(double x, double y);
-\end{minted}
-\end{frame}
-
-\begin{frame}[fragile]{Cool graph math, how do we do this in a computer?}
-\begin{minted}{C++}
-auto foo_fwd(double x, double y);
-template<ADType Ret, ADType T1, ADType T2>
-auto foo_rev(Ret&& z, T1& x, T2& y) {
-  adjoint(x) += adjoint(z) * compute_adj(x);
-  adjoint(y) += adjoint(z) * compute_adj(y);
-}
-\end{minted}
-\end{frame}
-
-\begin{frame}[fragile]{Cool graph math, how do we do this in a computer?}
-\begin{minted}{C++}
-auto foo_fwd(double x, double y);
-template<ADType Ret, ADType T1, ADType T2>
-auto foo_rev(Ret&& z, T1&& x, T2&& y) {
-  adjoint(x) += adjoint(z) * compute_adj(x);
-  adjoint(y) += adjoint(z) * compute_adj(y);
-}
-template<ADType T1, ADType T2>
-auto foo(T1&& x, T2&& y) {
-  auto fwd_ret = foo_fwd(x, y);
-  auto foo_rev = [](auto&& z, auto&& x, auto&& y) {
-    return my_func_rev(z, x, y);
-  }
-  auto rev_ops = tuple(ret, forward_as_tuple(x, y));
-  return tuple{rev_ops, foo_rev};
-}
-\end{minted}
+\begin{frame}{What Do AD Libraries Care About?}
+    \begin{itemize}
+        \item Flexibility:
+         \begin{itemize}
+             \item Debugging, exceptions, conditional loops, matrix subset assignment
+         \end{itemize}
+         \item: Efficiency:
+         \begin{itemize}
+             \item Efficiently using a single CPU/GPU
+         \end{itemize}
+         \item Scaling
+         \begin{itemize}
+             \item Efficiently using clusters with multi-gpu/cpu nodes
+         \end{itemize}
+    \end{itemize}
 \end{frame}
 
 \begin{frame}{How do we keep track of our reverse pass?}
@@ -724,6 +705,84 @@ Static (Fast) vs. Dynamic (Flexible) graphs
 \item Do I actually need to track my graph :)
 \end{itemize}
 \end{frame}
+
+
+
+\begin{frame}{Make A Tape}
+\vspace{-1mm}
+$$z = \log(x) * y + \sin(x)$$
+
+\begin{tikzpicture}
+  [
+    Round/.style={circle, draw=black!, fill=green!0, thick, minimum size=2mm},
+    Red/.style={circle, draw=black!, fill=red!255, thick, minimum size=2mm},
+    Yellow/.style={circle, draw=black!, fill=yellow!255, thick, minimum size=10mm},
+    Gray/.style={circle, draw=black!, fill=gray!35, thick, minimum size=2mm}
+  ]
+  % Nodes
+  \node[Gray] (v1) at(-8, 0) {$y$};
+
+  \node[Gray] (v2) at(0, 0) {$x$};
+
+  \node[Round] (v3) at(-4, -2) {$\log$};
+
+  \node[Round] (v4) at(1, -2) {$\sin$};
+
+  \node[Round] (v5) at(-6, -4) {$*$};
+
+  \node[Round] (v6) at(-3, -5.5) {$+$};
+
+
+  % Lines
+  \path [<-, draw, thick] (v5) -- (v1);
+  \path [<-, draw, thick] (v3) -- (v2);
+  \path [<-, draw, thick] (v4) -- (v2);
+  \path [<-, draw, thick] (v3) -- (v2);
+  \path [<-, draw, thick] (v6) -- (v4);
+  \path [<-, draw, thick] (v6) -- (v5);
+  \path [<-, draw, thick] (v5) -- (v3);
+
+\end{tikzpicture}
+\end{frame}
+
+\begin{frame}[fragile]{Cool graph math, how do we do this in a computer?}
+\begin{minted}{C++}
+auto foo_fwd(double x, double y);
+\end{minted}
+\end{frame}
+
+\begin{frame}[fragile]{Cool graph math, how do we do this in a computer?}
+\begin{minted}{C++}
+auto foo_fwd(double x, double y);
+
+template<ADType Ret, ADType T1, ADType T2>
+auto foo_rev(Ret&& z, T1& x, T2& y) {
+  adjoint(x) += adjoint(z) * compute_adj(x);
+  adjoint(y) += adjoint(z) * compute_adj(y);
+}
+\end{minted}
+\end{frame}
+
+\begin{frame}[fragile]{Cool graph math, how do we do this in a computer?}
+\begin{minted}{C++}
+auto foo_fwd(double x, double y);
+template<ADType Ret, ADType T1, ADType T2>
+auto foo_rev(Ret&& z, T1&& x, T2&& y) {
+  adjoint(x) += adjoint(z) * compute_adj(x);
+  adjoint(y) += adjoint(z) * compute_adj(y);
+}
+template<ADType T1, ADType T2>
+auto foo(T1&& x, T2&& y) {
+  auto fwd_ret = foo_fwd(x, y);
+  auto foo_rev = [](auto&& z, auto& x, auto& y) {
+    return my_func_rev(z, x, y);
+  };
+  auto rev_ops = tuple(fwd_ret, forward_as_tuple(x, y));
+  return tuple{rev_ops, foo_rev};
+}
+\end{minted}
+\end{frame}
+
 
 \begin{frame}{Make A Tape}
 $f(x, y) = \log(x)y + \sin(x)$
@@ -792,12 +851,12 @@ $f(x, y) = \log(x)y + \sin(x)$
 \end{figure}
 \end{frame}
 
-\begin{frame}{Object Oriented Approach}
+\begin{frame}{Operator Overloading Approach}
 \begin{itemize}
-    \item The object oriented approach usually involves:
+    \item The operator overloading approach usually involves:
     \begin{itemize}
-        \item A vector or list to track the expression graph for the reverse pass function calls
-        \item A pair to hold the value and adjoint
+        \item Tracking the expression graph for the reverse pass function calls
+        \item A pair scalar type to hold the value and adjoint
     \end{itemize}
     \item Very flexible: Allows conditional loops and reassignment of values in matrices
     \item Nodes of expression graph can be collapsed
@@ -805,62 +864,63 @@ $f(x, y) = \log(x)y + \sin(x)$
 \centerline{\href{https://godbolt.org/z/je173T18Y}{\textcolor{blue}{Example Godbolt}}}
 \end{frame}
 
-
-\begin{frame}[fragile]{Object Oriented Approach}
-  Adolc
+\begin{frame}[fragile]{Operator Overloading Approach: Adolc}
 \begin{minted}{C++}
 struct vari {
   double val;
   double adj;
-  op_code code
 }; // 12 bytes
 struct var {
   vari* vi_;
 }; // 8 bytes
+struct ad_tape {
+  struct expr_info {
+    vari** out_;
+    vari** in_;
+    op_code chain_op;
+  };
+  std::vector<expr_info> tape_;
+  inline void add_expr(var out, var in1, var in2, op_code expr_op) {
+    tape_.push_back({out.vi_, {in1.vi_, in2.vi_}, expr_op});
+    return out;
+  }
+};
 \end{minted}
-\centering
-\begin{CacheLine}
-  % Color some blocks
-  \CacheMarkBelow{0}{vari\{dbl, dbl, op\_code\}}
-  \CacheColor{0}{green!60}
-  \CacheColor{1}{green!60}
-  \CacheColor{2}{green!60}
-  \CacheMarkBelow{3}{vari\{dbl, dbl, op\_code\}}
-  \CacheColor{3}{green!60}
-  \CacheColor{4}{green!60}
-  \CacheColor{5}{green!60}
-  \CacheColor{6}{red!60}
-  \CacheColor{7}{red!60}
-\end{CacheLine}
 \end{frame}
 
-\begin{frame}[fragile]{Object Oriented Approach}
+\begin{frame}[fragile]{Operator Overloading Approach: Adolc}
+\begin{minted}{C++}
+inline auto operator+(var x, var y) {
+  return tape.add_expr(var(x.val() + y.val()), x, y, op_code::ADD_EXPR);
+}
+\end{minted}
+\end{frame}
+
+\begin{frame}[fragile]{Operator Overloading Approach}
 \begin{minted}{C++}
 void calc_grad(Tape& tape) {
   tape_val = tape.start();
   while (tape.start() != tape.end()) {
     auto op = tape.get_op();
-    switch op:
-      case log_fun:
-       op.input()[0].adj += op.output()[0].adj *
-         1.0 / op.input()[0].val;
-      case mul_fun:
-       op.input()[0].adj += op.output()[0].adj *
-         op.input_val()[1];
-       op.input()[1].adj += op.output()[0].adj *
-         op.input()[0].val;
+    switch (op.chain_op) {
+      case log_expr:
+       op.in(0).adj += op.out(0).adj * 1.0 / op.in(0).val;
+      case mul_expr:
+       op.in(0).adj += op.out(0).adj * op.in(1).val;
+       op.in(1).adj += op.out(0).adj * op.in(0).val;
+    }
   }
 }
 \end{minted}
 \end{frame}
 
-\begin{frame}[fragile]{Object Oriented Approach}
+\begin{frame}[fragile]{Operator Overloading Approach: Stan}
 \begin{minted}{C++}
 struct vari {
   double val;
   double adj;
   virtual void chain() {};
-}; // 16 bytes
+}; // 24 bytes
 struct var {
   vari* vi_;
   var(double val) : vi_(new vari{val, 0.0}) {}
@@ -882,7 +942,7 @@ struct var {
 \end{CacheLine}
 \end{frame}
 
-\begin{frame}[fragile]{Object Oriented Approach}
+\begin{frame}[fragile]{Operator Overloading Approach: Stan}
 \begin{minted}{C++}
 struct LogVari : vari {
   vari* in_;
@@ -890,7 +950,7 @@ struct LogVari : vari {
   virtual void chain() override {
     in_->adj += adj / in_->val;
   }
-};
+}; // 32 bytes
 inline var log(var x) {
   return var(new LogVari(x));
 }
@@ -910,7 +970,7 @@ inline var log(var x) {
 \end{CacheLine}
 \end{frame}
 
-\begin{frame}[fragile]{Object Oriented Approach}
+\begin{frame}[fragile]{Operator Overloading Approach: Stan}
 \begin{minted}{C++}
 struct add_vv : public var_impl {
   vari* lhs_;
@@ -919,7 +979,7 @@ struct add_vv : public var_impl {
     lhs_->adjoint_ += this->adjoint_;
     rhs_->adjoint_+= this->adjoint_;
   }
-};
+}; // 40 bytes
 \end{minted}
 \centering
 \begin{CacheLine}
@@ -936,7 +996,7 @@ struct add_vv : public var_impl {
 \end{CacheLine}
 \end{frame}
 
-\begin{frame}[fragile]{Object Oriented Approach}
+\begin{frame}[fragile]{Operator Overloading Approach: Stan}
 \begin{minted}[escapeinside=||]{C++}
 var x = 1;
 var y = 2;
@@ -945,7 +1005,7 @@ grad(z);
 \end{minted}
 \end{frame}
 
-\begin{frame}[fragile]{Object Oriented Approach}
+\begin{frame}[fragile]{Operator Overloading Approach: Stan}
 \begin{minted}[escapeinside=||]{C++}
 template <typename T, typename F>
 struct callback_vari : public vari_value<T> {
@@ -956,37 +1016,11 @@ struct callback_vari : public vari_value<T> {
         rev_functor_(std::forward<F>(rev_functor)) {}
 
   inline void chain() final { rev_functor_(*this); }
-};
-template <typename T, typename F>
-var make_callback_var(T&& value, F&& functor) {
-  return {
-      make_callback_vari(std::move(value), std::forward<F>(functor))};
-}
-
+}; // 24 + 8B * N
 \end{minted}
 \end{frame}
 
-\begin{frame}[fragile]{Object Oriented Ex:}
-\begin{minted}[escapeinside=||]{C++}
-struct var {
-  double val;
-  double adj;
-  virtual void chain() = 0;
-}; // 24 bytes
-struct FuncVar : var {
-  void chain() override {
-    // Implement the chain rule for this function
-  }
-};
-auto ad_func(var x, var y) {
-  // Compute forward pass
-  ad_type val = ad_func(value_of(x), value_of(y));
-  return FuncVar{val, 0.0};
-}
-\end{minted}
-\end{frame}
-
-\begin{frame}[fragile]{Object Oriented Approach: Matrices}
+\begin{frame}[fragile]{Operator Overloading Approach: Matrices}
 \begin{itemize}
     \item Either Array of Structs (AOS) or Struct of Arrays (SoA)
 \end{itemize}
@@ -1037,7 +1071,7 @@ while(error < tolerance) {
 \end{minted}
 \end{frame}
 
-\begin{frame}{Object Oriented Approach: Matrices}
+\begin{frame}{Operator Overloading Approach: Matrices}
 \begin{itemize}
     \item Array of Structs:
     \begin{itemize}
@@ -1054,22 +1088,7 @@ while(error < tolerance) {
 \end{itemize}
 \end{frame}
 
-\begin{frame}{What Do AD Libraries Care About?}
-    \begin{itemize}
-        \item Flexibility:
-         \begin{itemize}
-             \item Debugging, exceptions, conditional loops, matrix subset assignment
-         \end{itemize}
-         \item: Efficiency:
-         \begin{itemize}
-             \item Efficiently using a single CPU/GPU
-         \end{itemize}
-         \item Scaling
-         \begin{itemize}
-             \item Efficiently using clusters with multi-gpu/cpu nodes
-         \end{itemize}
-    \end{itemize}
-\end{frame}
+
 
 \begin{frame}{What are the AD packages like?}
 \centering

@@ -11,6 +11,7 @@
 #include <memory>
 #include <memory_resource>
 #include <ranges> // For std::views::reverse
+#include <benchmark/benchmark.h>
 
 static std::pmr::monotonic_buffer_resource mbr{1<<16};
 using alloc_t = std::pmr::polymorphic_allocator<std::byte>;
@@ -53,6 +54,7 @@ auto& adjoint(var x) { return x.vi_->adjoint_; }
 
 auto value(var x) { return x.vi_->value_; }
 
+#ifdef DEBUG_AD
 void print_var(const char* name, var& ret, var x) {
     std::cout << name << ": (" << value(ret) << ", " << adjoint(ret) << ")"
               << std::endl;
@@ -68,34 +70,36 @@ void print_var(const char* name, var& ret, var x, var y) {
     std::cout << "\t\t" << name << " OpR: (" << value(y) << ", " << adjoint(y) << ")"
               << std::endl;
 }
-struct add_vv : public var_impl {
+#else
+constexpr void print_var(const char* name, var& ret, var x) {}
+
+constexpr void print_var(const char* name, var& ret, var x, var y) {}
+#endif
+
+
+struct add_vv final : public var_impl {
   var lhs_;
   var rhs_;
-  add_vv(double val, var lhs, var rhs) : 
+  add_vv(double val, var lhs, var rhs) :
     var_impl(val), lhs_(lhs), rhs_(rhs) {}
   void chain() {
-    std::cout << "\tPre:\n";
-    std::cout << "sizeof(add): " << sizeof(add_vv) << std::endl;
-    print_var("Add", lhs_, rhs_);
     lhs_.adj() += this->adjoint_;
     rhs_.adj() += this->adjoint_;
-    std::cout << "\tPost:\n";
-    print_var("Add", lhs_, rhs_);
   }
 };
-struct add_dv : public var_impl {
+struct add_dv final : public var_impl {
   double lhs_;
   var rhs_;
-  add_dv(double val, double lhs, var rhs) : 
+  add_dv(double val, double lhs, var rhs) :
     var_impl(val), lhs_(lhs), rhs_(rhs) {}
   void chain() {
     rhs_.adj() += this->adjoint_;
   }
 };
-struct add_vd : public var_impl {
+struct add_vd final : public var_impl {
   var lhs_;
   double rhs_;
-  add_vd(double val, var lhs, double rhs) : 
+  add_vd(double val, var lhs, double rhs) :
     var_impl(val), lhs_(lhs), rhs_(rhs) {}
   void chain() {
     lhs_.adj() += this->adjoint_;
@@ -116,39 +120,31 @@ var& var::operator+=(var x) {
     return *this;
 }
 
-struct mul_vv : public var_impl {
+struct mul_vv final : public var_impl {
   var lhs_;
   var rhs_;
-  mul_vv(double val, var lhs, var rhs) : 
+  mul_vv(double val, var lhs, var rhs) :
     var_impl(val), lhs_(lhs), rhs_(rhs) {}
   void chain() {
-    std::cout << "Mul(v,v):\n";
-    std::cout << "\tPre:\n";
-    std::cout << "\tlhs.val(" << lhs_.val() << ") rhs.val(" << rhs_.val() << ")\n";
-    std::cout << "\tlhs.adj(" << lhs_.adj() << ") rhs.adj(" << rhs_.adj() << ")\n";
-    std::cout << "\tthis.val(" << this->value_ << ") this.adj(" << this->adjoint_ << ")\n";
     lhs_.adj() += rhs_.val() * this->adjoint_;
     rhs_.adj() += lhs_.val() * this->adjoint_;
-    std::cout << "\tPost:\n";
-    std::cout << "\tlhs.val(" << lhs_.val() << ") rhs.val(" << rhs_.val() << ")\n";
-    std::cout << "\tlhs.adj(" << lhs_.adj() << ") rhs.adj(" << rhs_.adj() << ")\n";
   }
 };
-struct mul_dv : public var_impl {
+struct mul_dv final : public var_impl {
   double lhs_;
   var rhs_;
-  mul_dv(double val, double lhs, var rhs) : 
+  mul_dv(double val, double lhs, var rhs) :
     var_impl(val), lhs_(lhs), rhs_(rhs) {}
-  
+
   void chain() {
     rhs_.adj() += lhs_ * this->adjoint_;
   }
 };
 
-struct mul_vd : public var_impl {
+struct mul_vd final : public var_impl {
   var lhs_;
   double rhs_;
-  mul_vd(double val, var lhs, double rhs) : 
+  mul_vd(double val, var lhs, double rhs) :
     var_impl(val), lhs_(lhs), rhs_(rhs) {}
   void chain() {
     lhs_.adj() += rhs_ * this->adjoint_;
@@ -166,20 +162,11 @@ auto operator*(T1 lhs, T2 rhs) {
   }
 }
 
-struct log_var : public var_impl {
+struct log_var final : public var_impl {
   var in_;
   log_var(double x, var in) : var_impl(x), in_(in) {}
-  void chain() { 
-    std::cout << "Log(v):\n";
-    std::cout << "\tPre:\n";
-    std::cout << "\tin.val(" << in_.val() << ") \n";
-    std::cout << "\tin.adj(" << in_.adj() << ") \n";
-    std::cout << "\tthis.val(" << this->value_ << ") this.adj(" << this->adjoint_ << ")\n";
+  void chain() {
     in_.adj() += this->adjoint_ / in_.val();
-    std::cout << "\tPost:\n";
-    std::cout << "\tin.val(" << in_.val() << ") \n";
-    std::cout << "\tin.adj(" << in_.adj() << ") \n";
-    std::cout << "\tthis.val(" << this->value_ << ") this.adj(" << this->adjoint_ << ")\n";
   }
 };
 
@@ -189,45 +176,23 @@ auto log(var x) {
 
 void grad(var z) noexcept {
     adjoint(z) = 1;
-    std::cout << "\nStart Reverse: " << std::endl;
     for (auto&& x : var_vec | std::views::reverse) {
       x->chain();
     }
-    std::cout << "End Reverse\n";
 }
 void clear_mem() {
     var_vec.clear();
     mbr.release();
 }
-int main() {
-    {
-        var x(2.0);
-        var y(4.0);
-        auto z = log(x*y) + y;
-        grad(z);
-        std::cout << "\nEnd: " << std::endl;
-        std::cout << "y: (" << value(y) << ", " << adjoint(y) << ")"
-                  << std::endl;
-        std::cout << "x: (" << value(x) << ", " << adjoint(x) << ")"
-                  << std::endl;
-    }
-    clear_mem();
-    std::cout << "\n--------------------------\nNext: \n" << std::endl;
-    {
-        var x(2.0);
-        var y(4.0);
-        auto z = x * log(y*x);
-        int iter = 0;
-        while (value(z) < 10) {
-            z += x * log(y) + log(x * y) * y;
-            std::cout << "z: " << value(z) << std::endl;
-            iter++;
-        }
-        grad(z);
-        std::cout << "\nEnd: " << std::endl;
-        std::cout << "y: (" << value(y) << ", " << adjoint(y) << ")"
-                  << std::endl;
-        std::cout << "x: (" << value(x) << ", " << adjoint(x) << ")"
-                  << std::endl;
+
+static void monobuff_bench(benchmark::State& state) {
+    for (auto _ : state) {
+      var x(2.0);
+      var y(4.0);
+      auto z = x * log(y) + log(x * y) * y;
+      grad(z);
+      benchmark::DoNotOptimize(z);
+      clear_mem();
     }
 }
+BENCHMARK(monobuff_bench);

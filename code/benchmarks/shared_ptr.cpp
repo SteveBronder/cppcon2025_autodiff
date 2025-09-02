@@ -9,6 +9,8 @@
 #include <sstream>
 #include <stdexcept>
 #include <vector>
+#include <benchmark/benchmark.h>
+
 struct var_impl {
   double value_;
   double adjoint_{0};
@@ -40,37 +42,40 @@ auto& adjoint(const var_impl& x) { return x.adjoint_; }
 auto value(var x) { return x.vi_->value_; }
 auto value(const var_impl& x) { return x.value_; }
 
-void print_var(const char* name, var_impl& ret, var x) {
-  std::cout << name << ": (" << value(ret) << ", " << adjoint(ret) << ")"
-            << std::endl;
-  std::cout << name << " Op: (" << value(x) << ", " << adjoint(x) << ")"
-            << std::endl;
+#ifdef DEBUG_AD
+void print_var(const char* name, var& ret, var x) {
+    std::cout << name << ": (" << value(ret) << ", " << adjoint(ret) << ")"
+              << std::endl;
+    std::cout << name << " Op: (" << value(x) << ", " << adjoint(x) << ")"
+              << std::endl;
 }
 
-
-void print_var(const char* name, var_impl& ret, var x, var y) {
-  std::cout << "\t" << name << ": (" << value(ret) << ", " << adjoint(ret)
-            << ")" << std::endl;
-  std::cout << "\t" << " OpL: (" << value(x) << ", " << adjoint(x)
-            << ")" << std::endl;
-  std::cout << "\t" << " OpR: (" << value(y) << ", " << adjoint(y)
-            << ")" << std::endl;
+void print_var(const char* name, var& ret, var x, var y) {
+    std::cout << "\t\t" << name << ": (" << value(ret) << ", " << adjoint(ret) << ")"
+              << std::endl;
+    std::cout << "\t\t" << name << " OpL: (" << value(x) << ", " << adjoint(x) << ")"
+              << std::endl;
+    std::cout << "\t\t" << name << " OpR: (" << value(y) << ", " << adjoint(y) << ")"
+              << std::endl;
 }
+#else
+constexpr void print_var(const char* name, var& ret, var x) {}
 
-struct add_vv : public var_impl {
+constexpr void print_var(const char* name, var& ret, var x, var y) {}
+#endif
+
+struct add_vv final : public var_impl {
   var lhs_;
   var rhs_;
   add_vv(double val, var lhs, var rhs) : var_impl(val), lhs_(lhs), rhs_(rhs) {}
   void chain() {
-    print_var("Add Pre:", (*this), lhs_, rhs_);
     lhs_.adj() += this->adjoint_;
     rhs_.adj() += this->adjoint_;
-    print_var("Add Post:", (*this), lhs_, rhs_);
     lhs_.chain();
     rhs_.chain();
   }
 };
-struct add_dv : public var_impl {
+struct add_dv final : public var_impl {
   double lhs_;
   var rhs_;
   add_dv(double val, double lhs, var rhs)
@@ -80,7 +85,7 @@ struct add_dv : public var_impl {
     rhs_.chain();
   }
 };
-struct add_vd : public var_impl {
+struct add_vd final : public var_impl {
   var lhs_;
   double rhs_;
   add_vd(double val, var lhs, double rhs)
@@ -105,21 +110,19 @@ var& var::operator+=(var x) {
   return *this;
 }
 
-struct mul_vv : public var_impl {
+struct mul_vv final : public var_impl {
   var lhs_;
   var rhs_;
   mul_vv(double val, var lhs, var rhs) : var_impl(val), lhs_(lhs), rhs_(rhs) {}
   void chain() {
-    print_var("Mul Pre:", (*this), lhs_, rhs_);
     lhs_.adj() += rhs_.val() * this->adjoint_;
     rhs_.adj() += lhs_.val() * this->adjoint_;
-    print_var("Mul Post:", (*this), lhs_, rhs_);
     lhs_.chain();
     rhs_.chain();
   }
 };
 
-struct mul_dv : public var_impl {
+struct mul_dv final : public var_impl {
   double lhs_;
   var rhs_;
   mul_dv(double val, double lhs, var rhs)
@@ -131,7 +134,7 @@ struct mul_dv : public var_impl {
   }
 };
 
-struct mul_vd : public var_impl {
+struct mul_vd final : public var_impl {
   var lhs_;
   double rhs_;
   mul_vd(double val, var lhs, double rhs)
@@ -153,52 +156,32 @@ auto operator*(T1 lhs, T2 rhs) {
   }
 }
 
-struct log_var : public var_impl {
+struct log_var final : public var_impl {
   var in_;
   log_var(double x, var in) : var_impl(x), in_(in) {}
   void chain() {
-    print_var("Log Pre:", (*this), in_);
     in_.adj() += this->adjoint_ / in_.val();
-    print_var("Log Post:", (*this), in_);
     in_.chain();
   }
 };
 
 auto log(var x) {
-  std::cout << "log: ";
   return var{std::make_shared<log_var>(std::log(x.val()), x)};
 }
 
 void grad(var z) noexcept {
   adjoint(z) = 1;
-  std::cout << "\nStart Reverse: " << std::endl;
   z.chain();
 }
 
-int main() {
-  {
-    var x(2.0);
-    var y(4.0);
-    auto z = log(x * y) + y;
-    grad(z);
-    std::cout << "\nEnd: " << std::endl;
-    std::cout << "y: (" << value(y) << ", " << adjoint(y) << ")" << std::endl;
-    std::cout << "x: (" << value(x) << ", " << adjoint(x) << ")" << std::endl;
-  }
-  std::cout << "\n--------------------------\nNext: \n" << std::endl;
-  {
-    var x(2.0);
-    var y(4.0);
-    auto z = x * log(y * x);
-    int iter = 0;
-    while (value(z) < 10) {
-      z += x * log(y) + log(x * y) * y;
-      std::cout << "z: " << value(z) << std::endl;
-      iter++;
+static void shared_ptr_bench(benchmark::State& state) {
+    for (auto _ : state) {
+      var x(2.0);
+      var y(4.0);
+      auto z = x * log(y) + log(x * y) * y;
+      grad(z);
+      benchmark::DoNotOptimize(z);
     }
-    grad(z);
-    std::cout << "\nEnd: " << std::endl;
-    std::cout << "y: (" << value(y) << ", " << adjoint(y) << ")" << std::endl;
-    std::cout << "x: (" << value(x) << ", " << adjoint(x) << ")" << std::endl;
-  }
 }
+
+BENCHMARK(shared_ptr_bench);

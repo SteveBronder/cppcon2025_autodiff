@@ -1,3 +1,5 @@
 slides/*
 !slides/slide.tex
 !slides/slide.pdf
+.vscode/
+build/

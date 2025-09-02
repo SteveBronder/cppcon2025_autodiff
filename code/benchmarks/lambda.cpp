@@ -11,6 +11,7 @@
 #include <memory>
 #include <memory_resource>
 #include <ranges> // For std::views::reverse
+#include <benchmark/benchmark.h>
 
 static std::pmr::monotonic_buffer_resource mbr{1<<16};
 using alloc_t = std::pmr::polymorphic_allocator<std::byte>;
@@ -52,7 +53,7 @@ struct var {
 auto& adjoint(var x) { return x.vi_->adjoint_; }
 
 auto value(var x) { return x.vi_->value_; }
-
+#ifdef DEBUG_AD
 void print_var(const char* name, var& ret, var x) {
     std::cout << name << ": (" << value(ret) << ", " << adjoint(ret) << ")"
               << std::endl;
@@ -68,15 +69,18 @@ void print_var(const char* name, var& ret, var x, var y) {
     std::cout << "\t\t" << name << " OpR: (" << value(y) << ", " << adjoint(y) << ")"
               << std::endl;
 }
+#else
+constexpr void print_var(const char* name, var& ret, var x) {}
 
+constexpr void print_var(const char* name, var& ret, var x, var y) {}
+#endif
 template <typename Lambda>
-struct lambda_var_impl : public var_impl {
+struct lambda_var_impl final : public var_impl {
     Lambda lambda_;
     lambda_var_impl(double val, Lambda&& lambda)
         : var_impl(val), lambda_(std::move(lambda)) {}
-    void chain() final { 
-      std::cout << "sizeof(lambda): " << sizeof(*this) << std::endl;
-      lambda_(var(this)); 
+    void chain() final {
+      lambda_(var(this));
     }
 };
 template <typename Lambda>
@@ -85,7 +89,7 @@ inline auto make_var(double ret_val, Lambda&& lambda) {
 }
 
 template <typename T1, typename T2>
-auto operator+(T1 lhs, T2 rhs) {
+inline auto operator+(T1 lhs, T2 rhs) {
   return make_var(value(lhs) + value(rhs), [lhs, rhs](auto&& ret) {
     if constexpr (!std::is_arithmetic_v<T1>) {
       adjoint(lhs) += adjoint(ret);
@@ -101,9 +105,8 @@ var& var::operator+=(var x) {
 }
 
 template <typename T1, typename T2>
-auto operator*(T1 lhs, T2 rhs) {
+inline auto operator*(T1 lhs, T2 rhs) {
   return make_var(value(lhs) + value(rhs), [lhs, rhs](auto&& ret) mutable {
-    std::cout << "Mul: \n";
     if constexpr (!std::is_arithmetic_v<T1>) {
       adjoint(lhs) += adjoint(ret) * value(rhs);
     }
@@ -113,54 +116,33 @@ auto operator*(T1 lhs, T2 rhs) {
   });
 }
 
-auto log(var x) {
+inline auto log(var x) {
     return make_var(std::log(x.val()), [x](auto&& ret) mutable {
-      std::cout << "Log: \n";
       x.adj() += ret.adj() / x.val();
     });
 }
 
-void grad(var z) noexcept {
+inline void grad(var z) {
     adjoint(z) = 1;
-    std::cout << "\nStart Reverse: " << std::endl;
     for (auto&& x : var_vec | std::views::reverse) {
       x->chain();
     }
-    std::cout << "End Reverse\n";
 }
-void clear_mem() {
+
+inline void clear_mem() {
     var_vec.clear();
     mbr.release();
 }
-int main() {
-    {
-        var x(2.0);
-        var y(4.0);
-        auto z = log(x*y) + y;
-        grad(z);
-        std::cout << "\nEnd: " << std::endl;
-        std::cout << "y: (" << value(y) << ", " << adjoint(y) << ")"
-                  << std::endl;
-        std::cout << "x: (" << value(x) << ", " << adjoint(x) << ")"
-                  << std::endl;
-    }
-    clear_mem();
-    std::cout << "\n--------------------------\nNext: \n" << std::endl;
-    {
-        var x(2.0);
-        var y(4.0);
-        auto z = x * log(y*x);
-        int iter = 0;
-        while (value(z) < 10) {
-            z += x * log(y) + log(x * y) * y;
-            std::cout << "z: " << value(z) << std::endl;
-            iter++;
-        }
-        grad(z);
-        std::cout << "\nEnd: " << std::endl;
-        std::cout << "y: (" << value(y) << ", " << adjoint(y) << ")"
-                  << std::endl;
-        std::cout << "x: (" << value(x) << ", " << adjoint(x) << ")"
-                  << std::endl;
+static void lambda_bench(benchmark::State& state) {
+    for (auto _ : state) {
+      var x(2.0);
+      var y(4.0);
+      auto z = x * log(y) + log(x * y) * y;
+      grad(z);
+      benchmark::DoNotOptimize(z);
+      clear_mem();
     }
 }
+
+
+BENCHMARK(lambda_bench);
