@@ -894,6 +894,45 @@ inline var log(var x) {
   return var(new LogVari(x));
 }
 \end{minted}
+\centering
+\begin{CacheLine}
+  % Color some blocks
+  \CacheMarkBelow{0}{LogVari\{dbl, dbl, vptr, vari*\}}
+  \CacheColor{0}{green!60}
+  \CacheColor{1}{green!60}
+  \CacheColor{2}{green!60}
+  \CacheColor{3}{green!60}
+  \CacheColor{4}{red!60}
+  \CacheColor{5}{red!60}
+  \CacheColor{6}{red!60}
+  \CacheColor{7}{red!60}
+\end{CacheLine}
+\end{frame}
+
+\begin{frame}[fragile]{Object Oriented Approach}
+\begin{minted}{C++}
+struct add_vv : public var_impl {
+  vari* lhs_;
+  vari* rhs_;
+  void chain() {
+    lhs_->adjoint_ += this->adjoint_;
+    rhs_->adjoint_+= this->adjoint_;
+  }
+};
+\end{minted}
+\centering
+\begin{CacheLine}
+  % Color some blocks
+  \CacheMarkBelow{0}{AddVari\{dbl, dbl, vptr, vari*, vari*\}}
+  \CacheColor{0}{green!60}
+  \CacheColor{1}{green!60}
+  \CacheColor{2}{green!60}
+  \CacheColor{3}{green!60}
+  \CacheColor{4}{green!60}
+  \CacheColor{5}{red!60}
+  \CacheColor{6}{red!60}
+  \CacheColor{7}{red!60}
+\end{CacheLine}
 \end{frame}
 
 \begin{frame}[fragile]{Object Oriented Approach}

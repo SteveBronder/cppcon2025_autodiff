@@ -1,11 +1,11 @@
 # Fdb version 4
-["xdvipdfmx"] 1756673527.66249 "slide.xdv" "slide.pdf" "slide" 1756673530.72921 0
-  "slide.xdv" 1756673527.55356 814940 deeec27a64623daa3269e3e8cca65a2f "xelatex"
+["xdvipdfmx"] 1756746436.46531 "slide.xdv" "slide.pdf" "slide" 1756746439.52953 0
+  "slide.xdv" 1756746436.37421 846896 2aa19331ede9aa7c7994f90379a80731 "xelatex"
   (generated)
   "slide.pdf"
   (rewritten before read)
-["xelatex"] 1756673523.53043 "/Users/sbronder/opensource/cppcon2025_autodiff/slides/slide.tex" "slide.xdv" "slide" 1756673530.72644 0
-  "/Users/sbronder/opensource/cppcon2025_autodiff/slides/slide.tex" 1756673518.9431 37833 de1fda79abc323e90ef2e285132e6727 ""
+["xelatex"] 1756746432.22155 "/Users/sbronder/opensource/cppcon2025_autodiff/slides/slide.tex" "slide.xdv" "slide" 1756746439.52658 0
+  "/Users/sbronder/opensource/cppcon2025_autodiff/slides/slide.tex" 1756746431.98676 38758 b27aaae55d04672eebbc976a048f80f1 ""
   "/usr/local/texlive/2025/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/local/texlive/2025/texmf-dist/fonts/tfm/adobe/zapfding/pzdr.tfm" 1136768653 1528 f853c4d1b4e0550255e02831fdc8496f ""
   "/usr/local/texlive/2025/texmf-dist/fonts/tfm/public/amsfonts/cmextra/cmbsy5.tfm" 1246382020 1120 1e8878807317373affa7f7bba4cf2f6a ""
@@ -294,11 +294,12 @@
   "_minted/7D4286454D73F08319D477786807634E.highlight.minted" 1756504263.24873 515 6eb42ce1c40b1594220334f0ba6f6a8b ""
   "_minted/D19B1FD5153123D9251F3D932C93F1BE.highlight.minted" 1756666872.69338 1422 39afc3211b69f65b201f529a4b907235 ""
   "_minted/E86DCDE2074AB2C8D2E2AFEEF2CF4C84.highlight.minted" 1756506133.65657 2675 19687d2771076b7e82f877d533ad38c1 ""
+  "_minted/F25F3AB3420819C93F3723C4D3565798.highlight.minted" 1756746399.52242 987 bd0d86d1ed9a62a0da07de55922449d3 ""
   "_minted/FADE5E37400BD4FC874EBC0145FFF40E.highlight.minted" 1756673205.80023 599 65ac7ff5bb10ef9c0245aa81b9e31557 ""
   "_minted/FD0D0BB0C3926A6E96BD09E594457122.highlight.minted" 1756504356.61369 2413 ea43b6276ac101742a0c21c95e256bad ""
   "_minted/FDB5C78DDDFE134402768CF8A3F51508.highlight.minted" 1756500894.44945 243 3312b95b48ce886dd481c0c5fb46ea07 ""
   "_minted/FE76542C7172A0528BD00219EC3F4B42.highlight.minted" 1756501024.38746 285 62a16a0c7a2cf10eb6a2bf8d5a788c75 ""
-  "_minted/_E02BD40F5C8FE41D28E4B72550A8BDD5.index.minted" 1756673523.41028 1004 829317da4bdeea81c6a6f9954081a50d ""
+  "_minted/_E02BD40F5C8FE41D28E4B72550A8BDD5.index.minted" 1756746400.47793 1061 5bc6283f698390f27106a27cddbceb20 ""
   "_minted/monokai.style.minted" 1756503514.8882 7023 c7089e902f66ab873db0423d87473e40 ""
   "gif/newton-0.png" 1756066293.48733 6407 660869128747af06f0783b988424e66a ""
   "gif/newton-1.png" 1756066293.50258 6578 6fb883985139a5c513170e90541466f3 ""
@@ -326,11 +327,11 @@
   "img/mcel2.png" 1756500613.12898 1849090 850eb5f2ef14063fa0fe3cdff7f686c7 ""
   "img/mcel3.png" 1756500615.78201 591358 ca9ff76e3cb05d9ed883a4f1a072a36a ""
   "img/mocking-spongebob.jpg" 1756500618.89945 41424 944d571884ab786c4bb2b40a309399fd ""
-  "slide.aux" 1756673527.54825 10564 2e0b4aa07d3eb3bcd9cdfe17bc6b0f2b "xelatex"
-  "slide.nav" 1756673527.55253 5294 348d32467e69a99e44c15362b73ccfcd "xelatex"
-  "slide.out" 1756673524.71572 0 d41d8cd98f00b204e9800998ecf8427e "xelatex"
-  "slide.tex" 1756673518.9431 37833 de1fda79abc323e90ef2e285132e6727 ""
-  "slide.vrb" 1756673527.2762 199 f0cf8e152ef6b5ae848f0eeca4ce4def "xelatex"
+  "slide.aux" 1756746436.37083 10735 44166605002441e3965c164e8a2dd385 "xelatex"
+  "slide.nav" 1756746436.37391 5387 018bf1bb759f0f1bf5fdf516be8102d8 "xelatex"
+  "slide.out" 1756746433.39029 0 d41d8cd98f00b204e9800998ecf8427e "xelatex"
+  "slide.tex" 1756746431.98676 38758 b27aaae55d04672eebbc976a048f80f1 ""
+  "slide.vrb" 1756746436.08207 199 f0cf8e152ef6b5ae848f0eeca4ce4def "xelatex"
   (generated)
   "slide.aux"
   "slide.log"

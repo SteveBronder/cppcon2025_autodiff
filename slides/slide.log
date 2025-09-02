@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999997 (TeX Live 2025) (preloaded format=xelatex 2025.3.8)  31 AUG 2025 16:52
+This is XeTeX, Version 3.141592653-2.6-0.999997 (TeX Live 2025) (preloaded format=xelatex 2025.3.8)  1 SEP 2025 13:07
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -1399,10 +1399,10 @@ Overfull \hbox (12.88231pt too wide) in paragraph at lines 652--652
 \pydata@fh@_E02BD40F5C8FE41D28E4B72550A8BDD5.data.minted=\write7
 \openout7 = `_E02BD40F5C8FE41D28E4B72550A8BDD5.data.minted'.
 
-runsystem(latexminted config  --timestamp 20250831165203 E02BD40F5C8FE41D28E4B72550A8BDD5)...executed safely (allowed).
+runsystem(latexminted config  --timestamp 20250901130712 E02BD40F5C8FE41D28E4B72550A8BDD5)...executed safely (allowed).
 
  (./_E02BD40F5C8FE41D28E4B72550A8BDD5.config.minted)
-runsystem(latexminted cleanconfig  --timestamp 20250831165203 E02BD40F5C8FE41D28E4B72550A8BDD5)...executed safely (allowed).
+runsystem(latexminted cleanconfig  --timestamp 20250901130712 E02BD40F5C8FE41D28E4B72550A8BDD5)...executed safely (allowed).
 
  (./_minted/monokai.style.minted) (./_minted/FDB5C78DDDFE134402768CF8A3F51508.highlight.minted))
 
@@ -1491,15 +1491,32 @@ Overfull \hbox (6.53448pt too wide) in paragraph at lines 26--882
 \openout4 = `slide.vrb'.
 
  (./slide.vrb (./_minted/17478AEC0B3F9C41BA013F2F82A7743D.highlight.minted))
+Overfull \hbox (26.5595pt too wide) in paragraph at lines 26--910
+[] 
+ []
+
+
 
 [41
 
 ]
 \openout4 = `slide.vrb'.
 
- (./slide.vrb (./_minted/7D4286454D73F08319D477786807634E.highlight.minted))
+ (./slide.vrb (./_minted/F25F3AB3420819C93F3723C4D3565798.highlight.minted))
+Overfull \hbox (39.2045pt too wide) in paragraph at lines 24--936
+[] 
+ []
+
+
 
 [42
+
+]
+\openout4 = `slide.vrb'.
+
+ (./slide.vrb (./_minted/7D4286454D73F08319D477786807634E.highlight.minted))
+
+[43
 
 ]
 \openout4 = `slide.vrb'.
@@ -1509,37 +1526,33 @@ LaTeX Font Info:    Font shape `TU/lmss/m/it' in size <9> not available
 (Font)              Font shape `TU/lmss/m/sl' tried instead on input line 15.
 ))
 
-[43
+[44
 
 ]
 \openout4 = `slide.vrb'.
 
  (./slide.vrb (./_minted/534B7B4A16D3EAF1C32898E5953D2795.highlight.minted))
 
-[44
+[45
 
 ]
 \openout4 = `slide.vrb'.
 
  (./slide.vrb (./_minted/D19B1FD5153123D9251F3D932C93F1BE.highlight.minted))
 
-[45
+[46
 
 ]
 \openout4 = `slide.vrb'.
 
  (./slide.vrb (./_minted/FE76542C7172A0528BD00219EC3F4B42.highlight.minted) (./_minted/69851CF5CB0B7148ADA0435F7C029A75.highlight.minted))
 
-[46
+[47
 
 ]
 \openout4 = `slide.vrb'.
 
  (./slide.vrb (./_minted/72A99941A17C4B9EB5C16EEBB4110735.highlight.minted))
-
-[47
-
-]
 
 [48
 
@@ -1580,6 +1593,10 @@ LaTeX Font Info:    Font shape `TU/lmss/m/it' in size <9> not available
 [57
 
 ]
+
+[58
+
+]
 \tf@nav=\write8
 \openout8 = `slide.nav'.
 
@@ -1598,12 +1615,12 @@ Package rerunfilecheck Info: File `slide.out' has not changed.
 (rerunfilecheck)             Checksum: D41D8CD98F00B204E9800998ECF8427E;0.
  ) 
 Here is how much of TeX's memory you used:
- 42874 strings out of 473832
- 992241 string characters out of 5729482
- 1582792 words of memory out of 5000000
- 65038 multiletter control sequences out of 15000+600000
+ 42885 strings out of 473832
+ 992651 string characters out of 5729482
+ 1582856 words of memory out of 5000000
+ 65044 multiletter control sequences out of 15000+600000
  569274 words of font info for 118 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
  128i,21n,123p,537b,981s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
-Output written on slide.xdv (57 pages, 814940 bytes).
+Output written on slide.xdv (58 pages, 846896 bytes).
