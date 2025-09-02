@@ -47,9 +47,9 @@
   minted options={
     linenos,autogobble,breaklines,fontsize=\footnotesize,
     mathescape,escapeinside=||,
-    bgcolor=codebg,          % <<< align inner bg with the box
+ %   bgcolor=codebg,          % <<< align inner bg with the box
   },
-  colback=codebg,            % <<< box background
+%  colback=codebg,            % <<< box background
   colframe=white!10,         % subtle border against black
   enhanced, breakable,
   boxrule=0.4pt, arc=2.5pt,
@@ -117,7 +117,7 @@
 % Optional: adjust how far below the bar the bottom labels/arrows go (in "y units")
 % e.g., \CacheSetBelow{1.2} pushes them farther down.
 \newcommand{\CacheSetBelow}[1]{\def\CacheBelow{#1}}
-% --------------------------------------------------------------------------- 
+% ---------------------------------------------------------------------------
 
 \title{Reverse Mode Automatic Differentiation: Unraveling Expression Graphs \& Library Magic}
 \author{Steve Bronder}
@@ -143,7 +143,7 @@
   \insertshorttitle\hfill%
   \insertframenumber\,/\,\inserttotalframenumber}
 \maketitle
-% Slide 
+% Slide
 
 
 { % all template changes are local to this group.
@@ -224,7 +224,7 @@ Ex: Newton's method for finding root of function (where output is 0)
 
 \note{How do we estimate solutions for equations? A simple method is the newton method.
 
-Why are gradients useful? We use gradients to solve 
+Why are gradients useful? We use gradients to solve
 
 For models we want to estimate parameter values. Change the slide here so that we show how to solve for parameters using newtons method}
 
@@ -344,7 +344,7 @@ u_g\sim\mathcal N(0,\sigma_u^2).
 \item Faster than finite difference, more flexible than symbolic differentiation
 \item Allows for unknown length while and for loops
 \item Accurate to floating point precision
-\item Reverse Mode AD can compute partials derivatives of inputs at the same time 
+\item Reverse Mode AD can compute partials derivatives of inputs at the same time
 \end{itemize}
 \end{frame}
 
@@ -371,7 +371,7 @@ u_g\sim\mathcal N(0,\sigma_u^2).
 \end{itemize}
 \end{frame}
 
-\note{Let $v_k$ be the sequence of intermediate expressions for the input $x$ and output $z$ and let $v_K = z$ and $v_0 = x_0; v_1 = x_1$. Let $\overline{v}_k$ be the partial gradient of the kth intermediate step. Then we can apply the chain rule to each intermediate step to get the partial gradient. 
+\note{Let $v_k$ be the sequence of intermediate expressions for the input $x$ and output $z$ and let $v_K = z$ and $v_0 = x_0; v_1 = x_1$. Let $\overline{v}_k$ be the partial gradient of the kth intermediate step. Then we can apply the chain rule to each intermediate step to get the partial gradient.
 }
 
 \begin{frame}{What's Automatic Differentiation?}
@@ -387,7 +387,7 @@ u_g\sim\mathcal N(0,\sigma_u^2).
 \end{equation*}
 
 Automatic Differentiation can do higher order partials, but here we just focus on the Jacobian
-    
+
 \end{frame}
 
 \begin{frame}{Cool Math, but how do we do this in a computer??}
@@ -395,18 +395,18 @@ Automatic Differentiation can do higher order partials, but here we just focus o
  For Reverse Mode AD, we perform two functions.
 
 \begin{itemize}
- \item Forward Pass: 
+ \item Forward Pass:
  \begin{equation*}
      z = f(x_0, x_1)
  \end{equation*}
  \item Reverse Pass: Given $z$'s adjoint (gradient) $\overline{z}$
  \begin{equation*}
- chain(z, x_0, x_{1}) = \left\{\diffp{z}{{x_0}}\overline{z},\diffp{z}{{x_1}}\overline{z}\right\}     
+ chain(z, x_0, x_{1}) = \left\{\diffp{z}{{x_0}}\overline{z},\diffp{z}{{x_1}}\overline{z}\right\}
  \end{equation*}
  \\Calculate the adjoint-jacobian update for $x_0$ and $x_1$.
  \item The calculations needed are represented as an expression Graph
 \end{itemize}
-\end{frame} 
+\end{frame}
 
 \begin{frame}{What's an Expression Graph?}
  \begin{itemize}
@@ -434,16 +434,16 @@ $$z = \log(x*y)$$
   \node[Gray] (v1) at(0, 0) {$x$};
 
   \node[Round] (v2) at(-4, -2) {$*$};
-  
+
   \node[Round] (v3) at(-6, -4) {$\log$};
-  
-  
-  
+
+
+
   % Lines
   \path [<-, draw, thick] (v2) -- (v0);
   \path [<-, draw, thick] (v2) -- (v1);
   \path [<-, draw, thick] (v3) -- (v2);
-  
+
 \end{tikzpicture}
 \end{frame}
 
@@ -462,7 +462,7 @@ $$z = \log(\mathcolor{red}{x} * \mathcolor{red}{y})$$
   \node[Gray, label=left:{\textcolor{blue}{$v_0$}}] (v0) at(-8, 0) {$\mathcolor{red}{y}$};
 
   \node[Gray, label=left:{\textcolor{blue}{$v_1$}}] (v1) at(0, 0) {$\mathcolor{red}{x}$};
-  
+
 \end{tikzpicture}
 \end{frame}
 
@@ -483,12 +483,12 @@ $$z = \log(x\mathcolor{red}{*}y)$$
   \node[Gray, label=left:{\textcolor{blue}{$v_1$}}] (v1) at(0, 0) {$x$};
 
   \node[Round, label=left:{\textcolor{blue}{$v_2 = v_0 * v_1$}}] (v2) at(-4, -2) {$\mathcolor{red}{*}$};
-  
-  
+
+
   % Lines
   \path [<-, draw, thick] (v2) -- (v0);
   \path [<-, draw, thick] (v2) -- (v1);
-  
+
 \end{tikzpicture}
 \end{frame}
 
@@ -523,7 +523,7 @@ Let $\overline{v}_i$ be the adjoint of $v_i$
 Automatic Differentiation only needs the partials of the intermediates
 \begin{align*}
     z &= x * y &\: \fracp{z}{x}=y, \fracp{z}{y}=x\\
-    z &= \log(x) &\: \frac{1}{x}\\ 
+    z &= \log(x) &\: \frac{1}{x}\\
 \end{align*}
 \end{frame}
 
@@ -663,7 +663,7 @@ auto foo_fwd(double x, double y);
 \begin{minted}{C++}
 auto foo_fwd(double x, double y);
 template<ADType Ret, ADType T1, ADType T2>
-auto foo_rev(Ret&& z, T1&& x, T2&& y) {
+auto foo_rev(Ret&& z, T1& x, T2& y) {
   adjoint(x) += adjoint(z) * compute_adj(x);
   adjoint(y) += adjoint(z) * compute_adj(y);
 }
@@ -714,7 +714,7 @@ Newer AD packages use a combination of both
 \end{frame}
 \note{flexibility, performance, and developer time}
 \begin{frame}{How do we keep track of our reverse pass?}
-Static (Fast) vs. Dynamic (Flexible) graphs 
+Static (Fast) vs. Dynamic (Flexible) graphs
 \begin{itemize}
 \item Known expression graph size at compile time? (Static)
 \item Reassignment of variables (dynamic easy, Static vv hard!)
@@ -736,18 +736,18 @@ $f(x, y) = \log(x)y + \sin(x)$
   ]
   % Nodes
   \node[Gray, label=right:{$v_1$}] (v2) at(0, 0) {$x$};
-  
+
   \node[Gray, label=right:{$v_2$}] (v1) at(2, 0) {$y$};
 
   \node[Round, label=right:{$v_3$}] (v3) at(4, 0) {$\log$};
-  
+
   \node[Round, label=right:{$v_4$}] (v4) at(6, 0) {$\sin$};
 
   \node[Round, label=right:{$v_5$}] (v5) at(8, 0) {$*$};
-  
+
   \node[Round, label=right:{$v_6$}] (v6) at(10, 0) {$+$};
-  
-  
+
+
   % Lines
   \path [->, draw, thick] (v1) to[out=20,in=160] (v5);
   \path [->, draw, thick] (v2) to[out=-20,in=-160] (v3);
@@ -755,7 +755,7 @@ $f(x, y) = \log(x)y + \sin(x)$
   \path [->, draw, thick] (v3) to[out=-20,in=-160] (v5);
   \path [->, draw, thick] (v4) to[out=40,in=120] (v6);
   \path [->, draw, thick] (v5) to[out=320,in=210] (v6);
-  
+
 \end{tikzpicture}
   \begin{tikzpicture}
   [
@@ -766,18 +766,18 @@ $f(x, y) = \log(x)y + \sin(x)$
   ]
   % Nodes
   \node[Gray, label=right:{$v_1$}] (v2) at(0, 0) {$x$};
-  
+
   \node[Gray, label=right:{$v_2$}] (v1) at(2, 0) {$y$};
 
   \node[Round, label=right:{$v_3$}] (v3) at(4, 0) {$\log$};
-  
+
   \node[Round, label=right:{$v_4$}] (v4) at(6, 0) {$\sin$};
 
   \node[Round, label=right:{$v_5$}] (v5) at(8, 0) {$*$};
-  
+
   \node[Round, label=right:{$v_6$}] (v6) at(10, 0) {$+$};
-  
-  
+
+
   % Lines
   \path [<-, draw, thick] (v1) to[out=20,in=160] (v5);
   \path [<-, draw, thick] (v2) to[out=-20,in=-160] (v3);
@@ -785,7 +785,7 @@ $f(x, y) = \log(x)y + \sin(x)$
   \path [<-, draw, thick] (v3) to[out=-20,in=-160] (v5);
   \path [<-, draw, thick] (v4) to[out=40,in=120] (v6);
   \path [<-, draw, thick] (v5) to[out=320,in=210] (v6);
-  
+
 \end{tikzpicture}
 \caption{Topological sort of expression graph}
 \end{figure}
@@ -793,7 +793,7 @@ $f(x, y) = \log(x)y + \sin(x)$
 
 \begin{frame}{Object Oriented Approach}
 \begin{itemize}
-    \item The object oriented approach usually involves: 
+    \item The object oriented approach usually involves:
     \begin{itemize}
         \item A vector or list to track the expression graph for the reverse pass function calls
         \item A pair to hold the value and adjoint
@@ -841,12 +841,12 @@ void calc_grad(Tape& tape) {
     auto op = tape.get_op();
     switch op:
       case log_fun:
-       op.input()[0].adj += op.output()[0].adj * 
+       op.input()[0].adj += op.output()[0].adj *
          1.0 / op.input()[0].val;
       case mul_fun:
-       op.input()[0].adj += op.output()[0].adj * 
+       op.input()[0].adj += op.output()[0].adj *
          op.input_val()[1];
-       op.input()[1].adj += op.output()[0].adj * 
+       op.input()[1].adj += op.output()[0].adj *
          op.input()[0].val;
   }
 }
@@ -997,7 +997,7 @@ struct var {
 };
 struct MatrixVar {
   var* data_;
-  MatrixVar(std::size_t N) : 
+  MatrixVar(std::size_t N) :
    data_(static_cast<var*>(malloc(sizeof(var) * N)) {}
 }
 MatrixVar aos_matrix;
@@ -1014,7 +1014,7 @@ VarMatrix soa_matrix;
 \begin{minted}[escapeinside=||]{C++}
 double z = log(x * y);
 \end{minted}
-Break it down 
+Break it down
 \begin{minted}[escapeinside=||]{C++}
 double v0 = x;
 double v1 = y;
@@ -1182,7 +1182,7 @@ Bad:
     \item No GC or dynamic dispatch support
 \end{itemize}
 \end{frame}
-% Slide 
+% Slide
 \begin{frame}{What did we talk about?}
    \begin{itemize}
     \item[-] What's Automatic Differentiation (AD)?
@@ -1199,7 +1199,7 @@ Bad:
     \end{itemize}
     \item[-] How is AD implemented
     \begin{itemize}
-        \item Source code is transformed (static graph) or objects are made for intermediate ops (dynamic graph) 
+        \item Source code is transformed (static graph) or objects are made for intermediate ops (dynamic graph)
     \end{itemize}
     \item[-] What are the tradeoffs between different AD packages
     \begin{itemize}
