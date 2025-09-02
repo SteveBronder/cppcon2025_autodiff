@@ -1,8 +1,0 @@
-\begin{MintedVerbatim}[commandchars=\\\{\}]
-\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{foo\PYGZus{}fwd}\PYG{p}{(}\PYG{k+kt}{double}\PYG{+w}{ }\PYG{n}{x}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{double}\PYG{+w}{ }\PYG{n}{y}\PYG{p}{)}\PYG{p}{;}
-\PYG{k}{template}\PYG{o}{\PYGZlt{}}\PYG{n}{ADType}\PYG{+w}{ }\PYG{n}{Ret}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{ADType}\PYG{+w}{ }\PYG{n}{T1}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{ADType}\PYG{+w}{ }\PYG{n}{T2}\PYG{o}{\PYGZgt{}}
-\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{foo\PYGZus{}rev}\PYG{p}{(}\PYG{n}{Ret}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{z}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{T1}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{x}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{T2}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{y}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
-\PYG{+w}{  }\PYG{n}{adjoint}\PYG{p}{(}\PYG{n}{x}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{+}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{adjoint}\PYG{p}{(}\PYG{n}{z}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{*}\PYG{+w}{ }\PYG{n}{compute\PYGZus{}adj}\PYG{p}{(}\PYG{n}{x}\PYG{p}{)}\PYG{p}{;}
-\PYG{+w}{  }\PYG{n}{adjoint}\PYG{p}{(}\PYG{n}{y}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{+}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{adjoint}\PYG{p}{(}\PYG{n}{z}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{*}\PYG{+w}{ }\PYG{n}{compute\PYGZus{}adj}\PYG{p}{(}\PYG{n}{y}\PYG{p}{)}\PYG{p}{;}
-\PYG{p}{\PYGZcb{}}
-\end{MintedVerbatim}
