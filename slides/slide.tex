@@ -69,7 +69,6 @@
 \usepackage{animate}
 % --- Minimal 64B cache line utilities ---------------------------------------
 % Requires: \usepackage{tikz} \usetikzlibrary{arrows.meta}
-
 % Environment draws an 8-block bar; you add colors/marks inside it.
 \newenvironment{CacheLine}[1][]{
   \begin{tikzpicture}[x=1.2cm,y=0.8cm,font=\footnotesize,>=Stealth,#1]
@@ -153,6 +152,7 @@
 \maketitle
 % Slide
 
+\begin{comment}
 
 { % all template changes are local to this group.
     \setbeamertemplate{navigation symbols}{}
@@ -192,7 +192,7 @@
         \end{tikzpicture}
      \end{frame}
 }
-
+\end{comment}
 \begin{frame}{Estimating COVID Infection Rates For Policy}
 \begin{figure}
 \centerline{\includegraphics[scale=.5]{img/covid_uk.jpg}}
