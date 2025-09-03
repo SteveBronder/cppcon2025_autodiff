@@ -21,6 +21,13 @@ struct var_impl {
     double adjoint_{0};
     virtual void chain() {};
     var_impl(double x) : value_(x), adjoint_(0) {}
+    inline auto val() const {
+      return value_;
+    }
+    inline auto& adj() {
+      return adjoint_;
+    }
+
 };
 static std::vector<var_impl*> var_vec;
 template <typename T, typename... Args>
@@ -37,7 +44,7 @@ struct var {
     auto& adj() {
       return vi_->adjoint_;
     }
-    auto val() {
+    auto val() const {
       return vi_->value_;
     }
     void chain() {
@@ -50,9 +57,10 @@ struct var {
 /**
  * Helper functions
  */
-auto& adjoint(var x) { return x.vi_->adjoint_; }
+inline auto& adjoint(var x) { return x.vi_->adjoint_; }
+inline auto& adjoint(var_impl& x) { return x.adjoint_; }
 
-auto value(var x) { return x.vi_->value_; }
+inline auto value(var x) { return x.vi_->value_; }
 #ifdef DEBUG_AD
 void print_var(const char* name, var& ret, var x) {
     std::cout << name << ": (" << value(ret) << ", " << adjoint(ret) << ")"
@@ -79,22 +87,31 @@ struct lambda_var_impl final : public var_impl {
     Lambda lambda_;
     lambda_var_impl(double val, Lambda&& lambda)
         : var_impl(val), lambda_(std::move(lambda)) {}
-    void chain() final {
-      lambda_(var(this));
+    void chain() {
+      lambda_(*this);
     }
 };
 template <typename Lambda>
 inline auto make_var(double ret_val, Lambda&& lambda) {
     return var(make_inbuffer<lambda_var_impl<Lambda>>(ret_val, std::move(lambda)));
 }
-
+namespace detail {
+  template <typename T>
+  struct is_var : std::false_type {};
+  template <>
+  struct is_var<var> : std::true_type {};
+}
+template <typename T>
+struct is_var : detail::is_var<std::decay_t<T>> {};
+template <typename T>
+inline constexpr bool is_var_v = is_var<T>::value;
 template <typename T1, typename T2>
 inline auto operator+(T1 lhs, T2 rhs) {
-  return make_var(value(lhs) + value(rhs), [lhs, rhs](auto&& ret) {
-    if constexpr (!std::is_arithmetic_v<T1>) {
+  return make_var(value(lhs) + value(rhs), [lhs, rhs](auto&& ret) mutable {
+    if constexpr (is_var_v<T1>) {
       adjoint(lhs) += adjoint(ret);
     }
-    if constexpr (!std::is_arithmetic_v<T2>) {
+    if constexpr (is_var_v<T2>) {
       adjoint(rhs) += adjoint(ret);
     }
   });
@@ -103,14 +120,13 @@ var& var::operator+=(var x) {
     this->vi_ = ((*this) + x).vi_;
     return *this;
 }
-
 template <typename T1, typename T2>
 inline auto operator*(T1 lhs, T2 rhs) {
   return make_var(value(lhs) + value(rhs), [lhs, rhs](auto&& ret) mutable {
-    if constexpr (!std::is_arithmetic_v<T1>) {
+    if constexpr (is_var_v<T1>) {
       adjoint(lhs) += adjoint(ret) * value(rhs);
     }
-    if constexpr (!std::is_arithmetic_v<T2>) {
+    if constexpr (is_var_v<T2>) {
       adjoint(rhs) += adjoint(ret) * value(lhs);
     }
   });

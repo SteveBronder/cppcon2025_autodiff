@@ -139,6 +139,13 @@
 
 \makeatother
 
+\addtobeamertemplate{navigation symbols}{}{%
+    \usebeamerfont{footline}%
+    \usebeamercolor[fg]{footline}%
+    \hspace{1em}%
+    \insertframenumber/\inserttotalframenumber
+}
+
 \begin{document}
 \expandafter\def\expandafter\insertshorttitle\expandafter{%
   \insertshorttitle\hfill%
@@ -773,18 +780,197 @@ auto foo_rev(Ret&& z, T1&& x, T2&& y) {
 }
 template<ADType T1, ADType T2>
 auto foo(T1&& x, T2&& y) {
-  auto fwd_ret = foo_fwd(x, y);
+  // Fwd pass
+  auto fwd_ret = foo_fwd(value(x), value(y));
+  // Setup reverse pass
   auto foo_rev = [](auto&& z, auto& x, auto& y) {
     return my_func_rev(z, x, y);
   };
-  auto rev_ops = tuple(fwd_ret, forward_as_tuple(x, y));
-  return tuple{rev_ops, foo_rev};
+  return tuple{foo_rev, fwd_ret, x, y};
 }
 \end{minted}
 \end{frame}
 
 
-\begin{frame}{Make A Tape}
+\begin{frame}{Operator Overloading Approach}
+\begin{itemize}
+    \item The operator overloading approach usually involves:
+    \begin{itemize}
+        \item Tracking the expression graph for the reverse pass function calls
+        \item A pair scalar type to hold the value and adjoint
+    \end{itemize}
+    \item Very flexible: Allows conditional loops and reassignment of values in matrices
+    \item Nodes of expression graph can be collapsed
+\end{itemize}
+\centerline{\href{https://godbolt.org/z/je173T18Y}{\textcolor{blue}{Example Godbolt}}}
+\end{frame}
+
+\begin{frame}[fragile]{Operator Overloading: Simple}
+\begin{minted}{C++}
+struct var_impl {
+  double val_;
+  double adj_;
+  virtual void chain() {}
+  var_impl(double val) : val_(val), adj_(0.0) {}
+};
+struct var {
+  std::shared_ptr<var_impl> vi_;
+  var(double x) : vi_(std::make_shared<var_impl>(x)) {
+  }
+};
+\end{minted}
+\end{frame}
+
+\begin{frame}[fragile]{Operator Overloading: Simple}
+\begin{minted}{C++}
+struct mul_vv final : public var_impl {
+  var lhs_;
+  var rhs_;
+  mul_vv(double val, var lhs, var rhs) : var_impl(val), lhs_(lhs), rhs_(rhs) {}
+  void chain() {
+    lhs_.adj() += rhs_.val() * this->adjoint_;
+    rhs_.adj() += lhs_.val() * this->adjoint_;
+    lhs_.chain();
+    rhs_.chain();
+  }
+};
+operator*(var x, var y) {
+  return var{
+    std::make_shared<mul_vv>(
+      x.val() * y.val(), x, y)};
+}
+\end{minted}
+\end{frame}
+\note{The virtual function in vari is a performance trick}
+\begin{frame}[fragile]{Operator Overloading: Simple}
+\begin{minted}{C++}
+void grad(var& v) {
+  v.adj() = 1.0;
+  v.chain();
+}
+var x(2.0);
+var y(4.0);
+auto z = x;
+while (value(z) < 10) {
+  z += x * log(y) + log(x * y) * y;
+}
+grad(z);
+\end{minted}
+\href{https://github.com/SteveBronder/cppcon2025_autodiff/blob/main/code/benchmarks/shared_ptr.cpp}{\textcolor{blue}{Full Example}}
+\end{frame}
+
+\note{At this point run the benchmark for shared}
+
+\begin{frame}{Issues}
+\begin{tikzpicture}[x=0.8cm,y=0.8cm,>=Latex,font=\small]
+  % Config
+  \def\N{11}                   % number of cells
+  \def\cl{4}                   % cache-line size in cells
+  \def\h{1.0}                  % cell height
+
+  % Memory bar
+  \draw[rounded corners=1pt] (0,0) rectangle (\N,\h);
+  \foreach \i in {0,...,10} {
+    \draw (\i,0) -- (\i,\h);
+    \node[below] at (\i+0.5,0) {\scriptsize \i};
+  }
+  % Cache line boundaries
+
+  % Access order (noncontiguous): change this list to your needs
+  % Sequence: 1 → 9 → 3 → 12 → 5 → 14 → 2 → 11
+  % markers
+
+  % jumps (curved arrows)
+  \draw[->,very thick,red,bend left=18]  (10.5,0.65) to (2.5,0.65);
+  \draw[->,very thick,red,bend left=18]  (2.5,0.65) to (5.5,0.65);
+  \draw[->,very thick,red,bend left=18]  (5.5,0.65) to (9.5,0.65);
+  \draw[->,very thick,red,bend left=18]  (9.5,0.65) to (0.5,0.65);
+  \draw[->,very thick,red,bend left=18]  (0.5,0.65) to (8.5,0.65);
+
+  % legend
+  \draw[very thick,black!45] (0,-0.55) -- (0.0,-0.55) node[left=8pt] {};
+  \node[below left] at (0,-0.05) {};
+  \node[above right,align=left] at (0,\h+0.55) {\bfseries Noncontiguous Access Pattern};
+\end{tikzpicture}
+
+\end{frame}
+\begin{frame}{Issues}
+\begin{tikzpicture}[x=0.8cm,y=0.8cm,>=Latex,font=\small]
+  % Config
+  \def\N{11}                   % number of cells
+  \def\cl{4}                   % cache-line size in cells
+  \def\h{1.0}                  % cell height
+
+  % Memory bar
+  \draw[rounded corners=1pt] (0,0) rectangle (\N,\h);
+  \foreach \i in {0,...,10} {
+    \draw (\i,0) -- (\i,\h);
+    \node[below] at (\i+0.5,0) {\scriptsize \i};
+  }
+  % Cache line boundaries
+
+  % Access order (noncontiguous): change this list to your needs
+  % Sequence: 1 → 9 → 3 → 12 → 5 → 14 → 2 → 11
+  % markers
+
+  % jumps (curved arrows)
+  \draw[->,very thick,red,bend right=22] (10.5,0.65)  to (9.5,0.65);
+  \draw[->,very thick,red,bend left=18]  (10.5,0.65) to (8.5,0.65);
+  \draw[->,very thick,red,bend right=18]  (9.5,0.65) to (7.5,0.65);
+  \draw[->,very thick,red,bend left=18]  (8.5,0.65) to (6.5,0.65);
+  \draw[->,very thick,red,bend right=18]  (7.5,0.65) to (5.5,0.65);
+  \draw[->,very thick,red,bend left=18]  (7.5,0.65) to (4.5,0.65);
+  \draw[->,very thick,red,bend right=18]  (4.5,0.65) to (3.5,0.65);
+  \draw[->,very thick,red,bend left=18]  (5.5,0.65) to (2.5,0.65);
+  \draw[->,very thick,red,bend right=18]  (3.5,0.65) to (1.5,0.65);
+  \draw[->,very thick,red,bend left=18]  (2.5,0.65) to (0.5,0.65);
+
+  % legend
+  \draw[very thick,black!45] (0,-0.55) -- (0.0,-0.55) node[left=8pt] {};
+  \node[below left] at (0,-0.05) {};
+  \node[above right,align=left] at (0,\h+0.55) {\bfseries Contiguous Access Pattern};
+\end{tikzpicture}
+
+\end{frame}
+
+\begin{frame}{DepthWise}
+\vspace{-1mm}
+$$z = \log(x) * y + \sin(x)$$
+
+\begin{tikzpicture}
+  [
+    Round/.style={circle, draw=black!, fill=green!0, thick, minimum size=2mm},
+    Red/.style={circle, draw=black!, fill=red!255, thick, minimum size=2mm},
+    Yellow/.style={circle, draw=black!, fill=yellow!255, thick, minimum size=10mm},
+    Gray/.style={circle, draw=black!, fill=gray!35, thick, minimum size=2mm}
+  ]
+  % Nodes
+  \node[Gray] (v1) at(-8, 0) {$y$};
+
+  \node[Gray] (v2) at(0, 0) {$x$};
+
+  \node[Round] (v3) at(-4, -2) {$\log$};
+
+  \node[Round] (v4) at(1, -2) {$\sin$};
+
+  \node[Round] (v5) at(-6, -4) {$*$};
+
+  \node[Round] (v6) at(-3, -5.5) {$+$};
+
+
+  % Lines
+  \path [->, draw=red, thick] (v5) -- (v1);
+  \path [->, draw, thick] (v3) -- (v2);
+  \path [->, draw, thick] (v4) -- (v2);
+  \path [->, draw, thick] (v3) -- (v2);
+  \path [->, draw, thick] (v6) -- (v4);
+  \path [->, draw=red, thick] (v6) -- (v5);
+  \path [->, draw, thick] (v5) -- (v3);
+
+\end{tikzpicture}
+\end{frame}
+
+\begin{frame}{Breadthwise}
 $f(x, y) = \log(x)y + \sin(x)$
 \begin{figure}
   \begin{tikzpicture}
@@ -796,15 +982,10 @@ $f(x, y) = \log(x)y + \sin(x)$
   ]
   % Nodes
   \node[Gray, label=right:{$v_1$}] (v2) at(0, 0) {$x$};
-
   \node[Gray, label=right:{$v_2$}] (v1) at(2, 0) {$y$};
-
   \node[Round, label=right:{$v_3$}] (v3) at(4, 0) {$\log$};
-
   \node[Round, label=right:{$v_4$}] (v4) at(6, 0) {$\sin$};
-
   \node[Round, label=right:{$v_5$}] (v5) at(8, 0) {$*$};
-
   \node[Round, label=right:{$v_6$}] (v6) at(10, 0) {$+$};
 
 
@@ -826,15 +1007,10 @@ $f(x, y) = \log(x)y + \sin(x)$
   ]
   % Nodes
   \node[Gray, label=right:{$v_1$}] (v2) at(0, 0) {$x$};
-
   \node[Gray, label=right:{$v_2$}] (v1) at(2, 0) {$y$};
-
   \node[Round, label=right:{$v_3$}] (v3) at(4, 0) {$\log$};
-
   \node[Round, label=right:{$v_4$}] (v4) at(6, 0) {$\sin$};
-
   \node[Round, label=right:{$v_5$}] (v5) at(8, 0) {$*$};
-
   \node[Round, label=right:{$v_6$}] (v6) at(10, 0) {$+$};
 
 
@@ -843,27 +1019,15 @@ $f(x, y) = \log(x)y + \sin(x)$
   \path [<-, draw, thick] (v2) to[out=-20,in=-160] (v3);
   \path [<-, draw, thick] (v2) to[out=-20,in=-160] (v4);
   \path [<-, draw, thick] (v3) to[out=-20,in=-160] (v5);
-  \path [<-, draw, thick] (v4) to[out=40,in=120] (v6);
-  \path [<-, draw, thick] (v5) to[out=320,in=210] (v6);
+  \path [<-, draw=red, thick] (v4) to[out=40,in=120] (v6);
+  \path [<-, draw=red, thick] (v5) to[out=320,in=210] (v6);
 
 \end{tikzpicture}
 \caption{Topological sort of expression graph}
 \end{figure}
 \end{frame}
 
-\begin{frame}{Operator Overloading Approach}
-\begin{itemize}
-    \item The operator overloading approach usually involves:
-    \begin{itemize}
-        \item Tracking the expression graph for the reverse pass function calls
-        \item A pair scalar type to hold the value and adjoint
-    \end{itemize}
-    \item Very flexible: Allows conditional loops and reassignment of values in matrices
-    \item Nodes of expression graph can be collapsed
-\end{itemize}
-\centerline{\href{https://godbolt.org/z/je173T18Y}{\textcolor{blue}{Example Godbolt}}}
-\end{frame}
-
+\begin{comment}
 \begin{frame}[fragile]{Operator Overloading Approach: Adolc}
 \begin{minted}{C++}
 struct vari {
@@ -913,9 +1077,17 @@ void calc_grad(Tape& tape) {
 }
 \end{minted}
 \end{frame}
+\end{comment}
 
-\begin{frame}[fragile]{Operator Overloading Approach: Stan}
+\begin{frame}[fragile]{Monotonic Buffer}
 \begin{minted}{C++}
+static monotonic_buffer_resource mbr{1<<16};
+static polymorphic_allocator<std::byte> pa{&mbr};
+static std::vector<vari*> vari_vec;
+template <typename T>
+auto& new_vari(double x) {
+  return *vari_vec.emplace_back(pa.new_object<T>(x, 0.0));
+}
 struct vari {
   double val;
   double adj;
@@ -923,7 +1095,8 @@ struct vari {
 }; // 24 bytes
 struct var {
   vari* vi_;
-  var(double val) : vi_(new vari{val, 0.0}) {}
+  var(double val) :
+  vi_(new_vari<vari>(val)) {}
 }; // 8 bytes
 \end{minted}
 \centering
@@ -942,7 +1115,7 @@ struct var {
 \end{CacheLine}
 \end{frame}
 
-\begin{frame}[fragile]{Operator Overloading Approach: Stan}
+\begin{frame}[fragile]{Monotonic Buffer}
 \begin{minted}{C++}
 struct LogVari : vari {
   vari* in_;
@@ -952,7 +1125,7 @@ struct LogVari : vari {
   }
 }; // 32 bytes
 inline var log(var x) {
-  return var(new LogVari(x));
+  return var(new_vari<LogVari>(x));
 }
 \end{minted}
 \centering
@@ -970,14 +1143,14 @@ inline var log(var x) {
 \end{CacheLine}
 \end{frame}
 
-\begin{frame}[fragile]{Operator Overloading Approach: Stan}
+\begin{frame}[fragile]{Monotonic Buffer}
 \begin{minted}{C++}
-struct add_vv : public var_impl {
+struct mul_vv : public var_impl {
   vari* lhs_;
   vari* rhs_;
   void chain() {
-    lhs_->adjoint_ += this->adjoint_;
-    rhs_->adjoint_+= this->adjoint_;
+    lhs_->adjoint_ += this->adjoint_ * rhs_->value_;
+    rhs_->adjoint_ += this->adjoint_ * lhs_->value_;
   }
 }; // 40 bytes
 \end{minted}
@@ -996,29 +1169,111 @@ struct add_vv : public var_impl {
 \end{CacheLine}
 \end{frame}
 
-\begin{frame}[fragile]{Operator Overloading Approach: Stan}
+\begin{frame}[fragile]{Monotonic Buffer}
 \begin{minted}[escapeinside=||]{C++}
+void grad(var z) {
+  z.adj() = 1;
+  for (auto& x : vari_vec | std::views::reverse) {
+    x->chain();
+  }
+}
 var x = 1;
 var y = 2;
 var z = log(x * y);
 grad(z);
+// Do what we want with x and y adjoints then clear
+vari_vec.clear();
+mbr.release();
 \end{minted}
 \end{frame}
 
-\begin{frame}[fragile]{Operator Overloading Approach: Stan}
+\begin{frame}[fragile]{Monotonic Buffer}
 \begin{minted}[escapeinside=||]{C++}
-template <typename T, typename F>
-struct callback_vari : public vari_value<T> {
-  F rev_functor_;
-  template <typename S>
-  explicit callback_vari(S&& value, F&& rev_functor)
-      : vari_value<T>(std::move(value), true),
-        rev_functor_(std::forward<F>(rev_functor)) {}
-
-  inline void chain() final { rev_functor_(*this); }
-}; // 24 + 8B * N
+for (auto& x : vari_vec | std::views::reverse) {
+  x->chain();
+}
 \end{minted}
 \end{frame}
+
+
+\begin{frame}[fragile]{Reduce Boilerplate}
+\begin{minted}[escapeinside=||]{C++}
+template <typename F>
+struct callback_vari : public vari {
+  F rev_functor_;
+  template <std::floating_point S>
+  explicit callback_vari(S&& value, F&& rev_functor)
+    : vari(value),
+      rev_functor_(rev_functor) {}
+  void chain() final { rev_functor_(*this); }
+}; // 24 + 8B * N
+template <std::floating_point T, typename F>
+auto lambda_var(T val, F&& rev_functor) {
+  return var(
+    new_vari<callback_vari<T, F>>(
+      std::forward<T>(val),
+      std::forward<F>(rev_functor)));
+}
+\end{minted}
+\end{frame}
+
+\begin{frame}[fragile]{Reduce Boilerplate}
+\begin{minted}[escapeinside=||]{C++}
+template <float_or_var T1, float_or_var T2>
+inline auto operator+(T1 lhs, T2 rhs) {
+  return lambda_var(value(lhs) + value(rhs),
+    [lhs, rhs](auto&& ret) mutable {
+      if constexpr (is_var_v<T1>) {
+        adjoint(lhs) += adjoint(ret);
+      }
+      if constexpr (is_var_v<T2>) {
+        adjoint(rhs) += adjoint(ret);
+      }
+    });
+}
+\end{minted}
+\end{frame}
+
+\begin{frame}{Comparison}
+\begin{table}
+  \centering % Centers the table on the page
+  \caption{$f(x, y) = x * \log(y) + \log(x * y) * y$;} % Table caption
+  \label{tab:firsttable} % Label for referencing
+  \begin{tabular}{|l|r|c|} % Three columns: left, center, right, with vertical lines
+    \hline % Top horizontal line
+    Method & CPU Time & \% Improvement \\ % First row (headers)
+    \hline % Line after headers
+    Shared Ptr & 508ns & 1.0 \\
+    MonoBuff   & 130ns & 3.9x \\
+    Lambda     & 120ns & 4.2x \\
+    SCT        &  84ns & 6.0x \\
+    \hline % Bottom horizontal line
+  \end{tabular}
+\end{table}
+\end{frame}
+
+\begin{frame}[fragile]{Operator Overloading Approach: Matrices}
+\begin{minted}{C++}
+Matrix<var> B(M, M);
+Matrix<var> X(M, M);
+Matrix<var> Z = X * B.transpose();
+\end{minted}
+\begin{itemize}
+    \item Array of Structs:
+    \begin{itemize}
+        \item Simple, most algorithms Just Work\texttrademark
+        \item Adds a lot to expression graph
+        \item turns off SIMD
+    \end{itemize}
+    \item Struct of Arrays:
+    \begin{itemize}
+        \item Hard, everything written out manually
+        \item Collapses matrix expressions in tree
+        \item SIMD can be used on values and adjoints
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
 
 \begin{frame}[fragile]{Operator Overloading Approach: Matrices}
 \begin{itemize}
@@ -1033,7 +1288,7 @@ struct var {
 struct MatrixVar {
   var* data_;
   MatrixVar(std::size_t N) :
-   data_(static_cast<var*>(malloc(sizeof(var) * N)) {}
+   data_(static_cast<var*>(malloc(sizeof(var) * N))) {}
 }
 MatrixVar aos_matrix;
 
@@ -1070,24 +1325,6 @@ while(error < tolerance) {
 }
 \end{minted}
 \end{frame}
-
-\begin{frame}{Operator Overloading Approach: Matrices}
-\begin{itemize}
-    \item Array of Structs:
-    \begin{itemize}
-        \item Simple, most algorithms Just Work\texttrademark
-        \item Adds a lot to expression graph
-        \item turns off SIMD
-    \end{itemize}
-    \item Struct of Arrays:
-    \begin{itemize}
-        \item Hard, everything written out manually
-        \item Collapses matrix expressions in tree
-        \item SIMD can be used on values and adjoints
-    \end{itemize}
-\end{itemize}
-\end{frame}
-
 
 
 \begin{frame}{What are the AD packages like?}

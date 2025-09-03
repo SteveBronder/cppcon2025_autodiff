@@ -23,22 +23,16 @@ if(NOT TARGET benchmark::benchmark)
 endif()
 
 
-set(AD_EX_OPTIMS OFF CACHE STRING "-march=native -mtune=native -O3" FORCE)
+set(MY_EXECUTABLES
+    baseline
+    shared_ptr
+    mono_buffer
+    lambda
+    sct
+)
 
-add_executable(shared_ptr_ex shared_ptr.cpp)
-target_compile_definitions(shared_ptr_ex PRIVATE ${AD_EX_OPTIMS})
-target_link_libraries(shared_ptr_ex PRIVATE benchmark::benchmark benchmark::benchmark_main)
-
-add_executable(mono_buffer_ex mono_buffer.cpp)
-target_compile_definitions(mono_buffer_ex PRIVATE ${AD_EX_OPTIMS})
-target_link_libraries(mono_buffer_ex PRIVATE benchmark::benchmark benchmark::benchmark_main)
-
-add_executable(lambda_ex lambda.cpp)
-target_compile_definitions(lambda_ex PRIVATE ${AD_EX_OPTIMS})
-target_link_libraries(lambda_ex PRIVATE benchmark::benchmark benchmark::benchmark_main)
-
-
-
-add_executable(sct_ex source_code_transform.cpp)
-target_compile_definitions(sct_ex PRIVATE ${AD_EX_OPTIMS})
-target_link_libraries(sct_ex PRIVATE benchmark::benchmark benchmark::benchmark_main)
+foreach(exe ${MY_EXECUTABLES})
+    add_executable(${exe} ${exe}.cpp)
+    target_compile_options(${exe} PRIVATE -march=native -mtune=native -O3 -g3)
+    target_link_libraries(${exe} PRIVATE benchmark::benchmark benchmark::benchmark_main)
+endforeach()
