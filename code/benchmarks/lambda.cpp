@@ -32,8 +32,13 @@ struct var_impl {
 static std::vector<var_impl*> var_vec;
 template <typename T, typename... Args>
 auto* make_inbuffer(Args&&... args) {
-  auto* ret = var_vec.emplace_back(new (pa.allocate_bytes(sizeof(T))) T{std::forward<Args>(args)...});
-  return ret;
+  if constexpr (!std::is_same_v<T, var_impl>) {
+    auto* ret = var_vec.emplace_back(new (pa.allocate_bytes(sizeof(T))) T{std::forward<Args>(args)...});
+    return ret;
+  } else {
+    auto* ret = new (pa.allocate_bytes(sizeof(T))) T{std::forward<Args>(args)...};
+    return ret;
+  }
 }
 struct var {
     var_impl* vi_; // ptr to impl

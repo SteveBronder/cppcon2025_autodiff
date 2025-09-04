@@ -9,6 +9,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <vector>
+#include <ranges> // For std::views::reverse
 #include <benchmark/benchmark.h>
 
 struct var_impl {
@@ -17,10 +18,12 @@ struct var_impl {
   virtual void chain() {};
   var_impl(double x) : value_(x), adjoint_(0) {}
 };
-
+static std::vector<std::shared_ptr<var_impl>> var_vec;
 struct var {
   std::shared_ptr<var_impl> vi_;  // ptr to impl
-  var(const std::shared_ptr<var_impl>& x) : vi_(x) {}
+  var(const std::shared_ptr<var_impl>& x) : vi_(x) {
+    var_vec.push_back(vi_);
+  }
   // Put new var_impl on arena
   var(double x) : vi_(std::make_shared<var_impl>(x)) {}
   var& operator+=(var x);
@@ -171,7 +174,9 @@ auto log(var x) {
 
 void grad(var z) noexcept {
   adjoint(z) = 1;
-  z.chain();
+  for (auto&& x : var_vec | std::views::reverse) {
+    x->chain();
+  }
 }
 
 static void shared_ptr_bench(benchmark::State& state) {
@@ -181,6 +186,7 @@ static void shared_ptr_bench(benchmark::State& state) {
       auto z = x * log(y) + log(x * y) * y;
       grad(z);
       benchmark::DoNotOptimize(z);
+      var_vec.clear();
     }
 }
 

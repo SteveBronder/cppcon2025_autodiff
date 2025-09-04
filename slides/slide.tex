@@ -202,7 +202,7 @@
 \end{frame}
 
 \note{These models can only exist because autodiff exists}
-\begin{frame}{Automatic Differentiation Probably Effects Your Day to Day}
+\begin{frame}{Automatic Differentiation  Affects Your Day to Day}
 \begin{figure}
 \centerline{\includegraphics[scale=.16]{img/chatgpt.png}}
 \label{fig-chatgpt}
@@ -211,47 +211,50 @@
 
 \note{Autodiff is the mitochondria of machine learning. AD allows for efficient estimation of many statistical models.}
 
-\begin{frame}{What's Automatic Differentiation?}
- Computational technique for evaluating derivatives of functions expressed as computer programs by systematically applying the chain rule.
-\begin{figure}
-\centerline{\includegraphics[scale=.15]{img/image.png}}
-\caption{Asking ChatGPT to make a physical representation of automatic differentiation.}
-\label{fig-delulu}
-\end{figure}
-\vspace{-7mm}
+\begin{frame}{What is Automatic Differentiation?}
+Computational technique for evaluating derivatives of functions expressed as computer programs by systematically applying the chain rule.
 \end{frame}
 
-\begin{frame}{Why use Automatic Differentiation?}
-Ex: Newton's method for finding root of function (where output is 0)
-
+\begin{frame}{Why use Automatic Differentiation}
+Ex: Newton's root finding method 
 \begin{equation*}
-    x_{n+1} = x_n - \frac{f\left(x_n\right)}{f'\left(x_{n}\right)}
+    x_{n+1} = x_n - \frac{f\left(x_n\right)}{f\,'\left(x_{n}\right)}
 \end{equation*}
-
+find $f(x)=y$ where $y=0$ 
 \end{frame}
-
-\note{How do we estimate solutions for equations? A simple method is the newton method.
-
+\note{
+How do we estimate solutions for equations? A simple method is the newton method.
 Why are gradients useful? We use gradients to solve
-
-For models we want to estimate parameter values. Change the slide here so that we show how to solve for parameters using newtons method}
+For models we want to estimate parameter values. Change the slide here so that we show how to solve for parameters using newtons method
+}
 
 \begin{frame}{Why use Automatic Differentiation?}
 \begin{align}
     f(x) &= x^3 + x^2 + x\\
-    f'(x) &= 3x^2 + 2x + 1
+    f\,'(x) &= 3x^2 + 2x + 1
 \end{align}
 \centering
 \animategraphics[loop,controls,scale=0.35]{2}{gif/newton-}{0}{17}
 \end{frame}
 
 \begin{frame}{Why use Automatic Differentiation?}
-Think about HMC, BFGS, SGD, etc.
 \begin{itemize}
-    \item HMC: $\frac{dp}{dt}=-\nabla_\theta\log p(\theta|y)$
-    \item BFGS: $s_k=-H_k \nabla_\theta f(\theta_k)$
-    \item SGD: $\theta_{t+1}=\theta_t−\eta\nabla_\theta L(\theta_t;x_t)$
+    \item Hamiltonian Monte Carlo: 
+    \begin{itemize}
+    \item $\frac{dp}{dt}=-\nabla_\theta\log p(\theta|y)$
+    \end{itemize}
+    \item BFGS: 
+    \begin{itemize}
+    \item $s_k=-H_k \nabla_\theta f(\theta_k)$
+    \end{itemize}
+    \item Stochastic Gradient Descent: 
+    \begin{itemize}
+    \item $\theta_{t+1}=\theta_t−\eta\nabla_\theta L(\theta_t;x_t)$
+    \end{itemize}
 \end{itemize}
+\end{frame}
+
+\begin{frame}{Why use Automatic Differentiation?}
 \begin{itemize}
     \item Choices
     \begin{itemize}
@@ -262,8 +265,8 @@ Think about HMC, BFGS, SGD, etc.
         \item automatic differentiation
     \end{itemize}
 \end{itemize}
-
 \end{frame}
+
 
 \begin{frame}{Why use Automatic Differentiation?}
 
@@ -307,7 +310,7 @@ p(\mathbf f\mid\boldsymbol\psi)
 \mathbf K
 =\sigma_f^{2}\Big(\mathbf K_{\text{LP}}(\ell,p,\lambda)\;+\;\rho\,\mathbf K_{\text{SE}}(\tilde\ell)\Big)
 +\sigma_n^{2}\mathbf I,\quad
-\big[\mathbf K_{\text{LP}}\big]_{t t'}
+\big[\mathbf K_{\text{LP}}\big]_{t t\,'}
 =\exp\!\left(
 -\frac{(t-t')^{2}}{2\ell^{2}}
 -\frac{2\sin^{2}\!\big(\pi|t-t'|/p\big)}{\lambda^{2}}
@@ -364,11 +367,10 @@ u_g\sim\mathcal N(0,\sigma_u^2).
 \end{figure}
 \end{frame}
 
-\begin{frame}{Impl Matters!}
-  TODO: QR code here
+\begin{frame}{Implementation Matters!}
 \begin{figure}
 \centerline{\includegraphics[scale=.5]{img/combined_regression_plot.png}}
-\caption{Benchmark for $f'$ given $f = y\sim N(X\theta,\sigma)$}
+\caption{Benchmark for $f\,'$ given $f(y) = N(y | X\theta,\sigma)$}
 \label{fig-red-bench}
 \end{figure}
 \end{frame}
@@ -376,54 +378,51 @@ u_g\sim\mathcal N(0,\sigma_u^2).
 \begin{frame}{Goal of this talk}
 \begin{itemize}
     \item Understand performance of high throughput memory intensive programs
-    \item Show how modern C++ through time has led to cleaner and more efficient AD
+    \item Show how modern C++ has led to cleaner and more efficient AD
 \end{itemize}
 \end{frame}
 
-\note{Let $v_k$ be the sequence of intermediate expressions for the input $x$ and output $z$ and let $v_K = z$ and $v_0 = x_0; v_1 = x_1$. Let $\overline{v}_k$ be the partial gradient of the kth intermediate step. Then we can apply the chain rule to each intermediate step to get the partial gradient.
+\note{Let $v_k$ be the sequence of intermediate expressions for the input $x$ and output $z$ and let $v_K = z$ and $v_0 = x; v_1 = y$. Let $\overline{v}_k$ be the partial gradient of the kth intermediate step. Then we can apply the chain rule to each intermediate step to get the partial gradient.
 }
 
-\begin{frame}{What's Automatic Differentiation?}
-
+\begin{frame}[fragile]{What is Automatic Differentiation?}
 \begin{itemize}
-    \item Given a function $f$ with inputs $x\in\mathbb{R}^n$ and outputs $z\in \mathbb{R}^m$ we want to calculate the Jacobian $J$ with size $(m, n)$
-    \item To get the full Jacobian, use the chain rule to differentiate from each output to each input.
+  \item AD computes gradients of a program by applying the chain rule to its subexpressions.
+  \item Given a function $f$ with inputs $x\in\mathbb{R}^n$ and outputs $z\in \mathbb{R}^m$ we want to "calculate the Jacobian $J\,$" with size $(m, n)$
 \end{itemize}
-
-
-\begin{equation*}
-    J_{i, 1:j} = \left\{\fracp{z_i}{x_1}, \cdots, \fracp{z_i}{x_j}\right\}
-\end{equation*}
-
-Automatic Differentiation can do higher order partials, but here we just focus on the Jacobian
-
+%Automatic Differentiation can do higher order partials, but here we just focus on the first order
 \end{frame}
 
-\begin{frame}{Cool Math, but how do we do this in a computer??}
+\note{Emphasize: AD is mechanical chain rule over the executed program, not symbolic math or numeric differencing.}
 
- For Reverse Mode AD, we perform two functions.
+\begin{frame}{Data Type: Expression Graph}
+Goal: Calculate the full gradient by accumulating partial gradients (adjoints) through the a graph of subexpressions.
 
+ \begin{itemize}
+%     \item Dependency graph of intermediate computations
+     \item Think of both data and operations as objects
+     \begin{itemize}
+     \item Forward pass to calculate the values of the intermediates subexpressions
+     \item Reverse pass to calculate the local adjoint-Jacobian update of subexpressions
+     \end{itemize}
+ \end{itemize}
+ \end{frame}
+
+\begin{frame}{What is Automatic Differentiation}
+ For Reverse Mode AD, each node performs two functions.
 \begin{itemize}
  \item Forward Pass:
  \begin{equation*}
-     z = f(x_0, x_1)
+     u = f(x, y)
  \end{equation*}
- \item Reverse Pass: Given $z$'s adjoint (gradient) $\overline{z}$
+ \item Reverse Pass: Given $u$'s adjoint (partial gradient) $\overline{u}$
+ \\Calculate the local adjoint-Jacobian update for $x$ and $y$.
  \begin{equation*}
- chain(z, x_0, x_{1}) = \left\{\diffp{z}{{x_0}}\overline{z},\diffp{z}{{x_1}}\overline{z}\right\}
+ chain(\overline{u}, x, x_{1}) = \left\{\overline{x} \pluseq \diffp{u}{{x}}\overline{u},\overline{y} \pluseq \diffp{u}{{y}}\overline{u}\right\}
  \end{equation*}
- \\Calculate the adjoint-jacobian update for $x_0$ and $x_1$.
  \item The calculations needed are represented as an expression Graph
 \end{itemize}
 \end{frame}
-
-\begin{frame}{What's an Expression Graph?}
- \begin{itemize}
-     \item Dependency graph of intermediate computations
-     \item Think of both data and operations as objects
-     \item Do a forward pass to calculate the values of the intermediates, then a reverse pass to calculate the adjoint-jacobian updates.
- \end{itemize}
- \end{frame}
 
 % Slide 1
 \begin{frame}{Forward Pass}
@@ -458,7 +457,7 @@ $$z = \log(x*y)$$
 
 \begin{frame}{Forward Pass}
 \vspace{-1mm}
-$$z = \log(\mathcolor{red}{x} * \mathcolor{red}{y})$$
+$$z = \log(\mathcolor{red}{x} \cdot \mathcolor{red}{y})$$
 
 \begin{tikzpicture}
   [
@@ -477,7 +476,7 @@ $$z = \log(\mathcolor{red}{x} * \mathcolor{red}{y})$$
 
 \begin{frame}{Forward Pass}
 \vspace{-1mm}
-$$z = \log(x\mathcolor{red}{*}y)$$
+$$z = \log(x\mathcolor{red}{\cdot}y)$$
 
 \begin{tikzpicture}
   [
@@ -491,7 +490,7 @@ $$z = \log(x\mathcolor{red}{*}y)$$
 
   \node[Gray, label=left:{\textcolor{blue}{$v_1$}}] (v1) at(0, 0) {$x$};
 
-  \node[Round, label=left:{\textcolor{blue}{$v_2 = v_0 * v_1$}}] (v2) at(-4, -2) {$\mathcolor{red}{*}$};
+  \node[Round, label=left:{\textcolor{blue}{$v_2 = v_0 \cdot v_1$}}] (v2) at(-4, -2) {$\mathcolor{red}{\cdot}$};
 
 
   % Lines
@@ -503,7 +502,7 @@ $$z = \log(x\mathcolor{red}{*}y)$$
 
 \begin{frame}{Forward Pass}
 \vspace{-1mm}
-$$z = \log(x\mathcolor{red}{*}y)$$
+$$z = \mathcolor{red}{\log}(x\cdot y)$$
 \begin{tikzpicture}
   [
     Round/.style={circle, draw=black!, fill=green!0, thick, minimum size=2mm},
@@ -514,7 +513,7 @@ $$z = \log(x\mathcolor{red}{*}y)$$
   % Nodes
   \node[Gray, label=left:{\textcolor{blue}{$v_0$}}] (v0) at(-8, 0) {$y$};
   \node[Gray, label=left:{\textcolor{blue}{$v_1$}}] (v1) at(0, 0) {$x$};
-  \node[Round, label=left:{\textcolor{blue}{$v_2 = v_0 * v_1$}}] (v2) at(-4, -2) {$*$};
+  \node[Round, label=left:{\textcolor{blue}{$v_2 = v_0 \cdot v_1$}}] (v2) at(-4, -2) {$\times$};
   \node[Round, label=left:{\textcolor{blue}{$v_3 = \log{v_2}$}}] (v3) at(-4, -4) {$\mathcolor{red}{\log}$};
   % Lines
   \path [<-, draw, thick] (v2) -- (v0);
@@ -523,7 +522,7 @@ $$z = \log(x\mathcolor{red}{*}y)$$
 \end{tikzpicture}
 \end{frame}
 
-\begin{frame}{How do we calculate the adjoint jacobian?}
+\begin{frame}{How do we calculate the adjoint Jacobian?}
 Let $\overline{v}_i$ be the adjoint of $v_i$
 
 \begin{equation*}
@@ -531,14 +530,14 @@ Let $\overline{v}_i$ be the adjoint of $v_i$
 \end{equation*}
 Automatic Differentiation only needs the partials of the intermediates
 \begin{align*}
-    z &= x * y &\: \fracp{z}{x}=y, \fracp{z}{y}=x\\
-    z &= \log(x) &\: \frac{1}{x}\\
+    v_2 &= v_0 \cdot v_1 &\: \fracp{v_2}{v_0}&=v_1, \fracp{v_2}{v_1}=v_0\\
+    v_3 &= \log(v_2) &\: \fracp{v_3}{v_2}&=\frac{1}{v_2}\\
 \end{align*}
 \end{frame}
 
 \begin{frame}{Reverse Pass}
 \vspace{-1mm}
-$$z = \mathcolor{red}{\log(x*y)}$$
+$$z = \mathcolor{red}{\log(x\cdot y)}$$
 \begin{tikzpicture}
   [
     Round/.style={circle, draw=black!, fill=green!0, thick, minimum size=2mm},
@@ -549,7 +548,7 @@ $$z = \mathcolor{red}{\log(x*y)}$$
   % Nodes
   \node[Gray, label=left:{\textcolor{blue}{$v_0$}}] (v0) at(-8, 0) {$y$};
   \node[Gray, label=left:{\textcolor{blue}{$v_1$}}] (v1) at(0, 0) {$x$};
-  \node[Round, label=left:{\textcolor{blue}{$v_2 = v_0 * v_1$}}] (v2) at(-4, -2) {$*$};
+  \node[Round, label=left:{\textcolor{blue}{$v_2 = v_0 \cdot v_1$}}] (v2) at(-4, -2) {$\times$};
   \node[Round, label=left:{\textcolor{blue}{$v_3 = \log{v_2}$}},
     label=right:{\textcolor{red}{$\adj{v_3}=\pp{v_3}{v_3}=1$}}] (v3) at(-4, -4) {$\mathcolor{red}{\log}$};
   % Lines
@@ -561,7 +560,7 @@ $$z = \mathcolor{red}{\log(x*y)}$$
 
 \begin{frame}{Reverse Pass}
 \vspace{-1mm}
-$$z = \log(\mathcolor{red}{x*y})$$
+$$z = \log(\mathcolor{red}{x\cdot y})$$
 \begin{tikzpicture}
   [
     Round/.style={circle, draw=black!, fill=green!0, thick, minimum size=2mm},
@@ -572,20 +571,20 @@ $$z = \log(\mathcolor{red}{x*y})$$
   % Nodes
   \node[Gray, label=left:{\textcolor{blue}{$v_0$}}] (v0) at(-8, 0) {$y$};
   \node[Gray, label=left:{\textcolor{blue}{$v_1$}}] (v1) at(0, 0) {$x$};
-  \node[Round, label=left:{\textcolor{blue}{$v_2 = v_0 * v_1$}},
-    label=right:{\textcolor{red}{$\adj{v_2}=\adj{v_3}\pp{v_3}{v_2}=1*\frac{1}{v_2}$}}] (v2) at(-4, -2) {$*$};
+  \node[Round, label=left:{\textcolor{blue}{$v_2 = v_0 \cdot v_1$}},
+    label=right:{\textcolor{red}{$\adj{v_2}=\adj{v_3}\pp{v_3}{v_2}=1\cdot \frac{1}{v_2}$}}] (v2) at(-4, -2) {$\times$};
   \node[Round, label=left:{\textcolor{blue}{$v_3 = \log{v_2}$}},
     label=right:{\textcolor{red}{$\adj{v_3}=\pp{v_3}{v_3}=1$}}] (v3) at(-4, -4) {$\mathcolor{red}{\log}$};
   % Lines
   \path [<-, draw, thick] (v2) -- (v0);
   \path [<-, draw, thick] (v2) -- (v1);
-  \path [<-, draw, thick] (v3) -- (v2);
+  \path [->, draw, thick] (v3) -- (v2);
 \end{tikzpicture}
 \end{frame}
 
 \begin{frame}{Reverse Pass}
 \vspace{-1mm}
-$$z = \log(x*\mathcolor{red}{y})$$
+$$z = \log(x\cdot \mathcolor{red}{y})$$
 \begin{tikzpicture}
   [
     Round/.style={circle, draw=black!, fill=green!0, thick, minimum size=2mm},
@@ -597,20 +596,20 @@ $$z = \log(x*\mathcolor{red}{y})$$
   \node[Gray, label=left:{\textcolor{blue}{$v_0$}}] (v0) at(-8, 0) {$y$};
   \node[Gray, label=left:{\textcolor{blue}{$v_1$}},
     label=right:{\textcolor{red}{$\adj{v_1}=\adj{v_2}\pp{v_2}{v_1}=\adj{v_2}v_0$}}] (v1) at(-1, 0) {$x$};
-  \node[Round, label=left:{\textcolor{blue}{$v_2 = v_0 * v_1$}},
-    label=right:{\textcolor{red}{$\adj{v_2}=\adj{v_3}\pp{v_3}{v_2}=1*\frac{1}{v_2}$}}] (v2) at(-4, -2) {$*$};
+  \node[Round, label=left:{\textcolor{blue}{$v_2 = v_0 \cdot v_1$}},
+    label=right:{\textcolor{red}{$\adj{v_2}=\adj{v_3}\pp{v_3}{v_2}=1\cdot \frac{1}{v_2}$}}] (v2) at(-4, -2) {$\times$};
   \node[Round, label=left:{\textcolor{blue}{$v_3 = \log{v_2}$}},
     label=right:{\textcolor{red}{$\adj{v_3}=\pp{v_3}{v_3}=1$}}] (v3) at(-4, -4) {$\mathcolor{red}{\log}$};
   % Lines
-  \path [<-, draw, thick] (v2) -- (v0);
+  \path [->, draw, thick] (v2) -- (v0);
   \path [<-, draw, thick] (v2) -- (v1);
-  \path [<-, draw, thick] (v3) -- (v2);
+  \path [->, draw, thick] (v3) -- (v2);
 \end{tikzpicture}
 \end{frame}
 
 \begin{frame}{Reverse Pass}
 \vspace{-1mm}
-$$z = \log(\mathcolor{red}{x}*y)$$
+$$z = \log(\mathcolor{red}{x}\cdot y)$$
 \begin{tikzpicture}
   [
     Round/.style={circle, draw=black!, fill=green!0, thick, minimum size=2mm},
@@ -623,20 +622,20 @@ $$z = \log(\mathcolor{red}{x}*y)$$
     label=right:{\textcolor{red}{$\adj{v_0}=\adj{v_2}\pp{v_2}{v_0}=\frac{1}{v_2}v_1$}}] (v0) at(-8, 0) {$y$};
   \node[Gray, label=left:{\textcolor{blue}{$v_1$}},
     label=right:{\textcolor{red}{$\adj{v_1}=\adj{v_2}\pp{v_2}{v_1}=\frac{1}{v_2}v_0$}}] (v1) at(-1, 0) {$x$};
-  \node[Round, label=left:{\textcolor{blue}{$v_2 = v_0 * v_1$}},
-    label=right:{\textcolor{red}{$\adj{v_2}=\adj{v_3}\pp{v_3}{v_2}=1*\frac{1}{v_2}$}}] (v2) at(-4, -2) {$*$};
+  \node[Round, label=left:{\textcolor{blue}{$v_2 = v_0 \cdot v_1$}},
+    label=right:{\textcolor{red}{$\adj{v_2}=\adj{v_3}\pp{v_3}{v_2}=1\cdot \frac{1}{v_2}$}}] (v2) at(-4, -2) {$\times$};
   \node[Round, label=left:{\textcolor{blue}{$v_3 = \log{v_2}$}},
     label=right:{\textcolor{red}{$\adj{v_3}=\pp{v_3}{v_3}=1$}}] (v3) at(-4, -4) {$\mathcolor{red}{\log}$};
   % Lines
-  \path [<-, draw, thick] (v2) -- (v0);
-  \path [<-, draw, thick] (v2) -- (v1);
-  \path [<-, draw, thick] (v3) -- (v2);
+  \path [->, draw, thick] (v2) -- (v0);
+  \path [->, draw, thick] (v2) -- (v1);
+  \path [->, draw, thick] (v3) -- (v2);
 \end{tikzpicture}
 \end{frame}
 
 \begin{frame}{Reverse Pass}
 \vspace{-1mm}
-$$z = \log(x*y)$$
+$$z = \log(x\cdot y)$$
 \begin{tikzpicture}
   [
     Round/.style={circle, draw=black!, fill=green!0, thick, minimum size=2mm},
@@ -646,17 +645,17 @@ $$z = \log(x*y)$$
   ]
   % Nodes
   \node[Gray, label=left:{\textcolor{blue}{$v_0$}},
-    label=right:{\textcolor{red}{$\adj{v_0}=\adj{v_2}\pp{v_2}{v_0}=\frac{1}{v_2}v_1=\frac{1}{x}$}}] (v0) at(-8, 0) {$y$};
+    label=right:{\textcolor{red}{$\adj{v_0}=\adj{v_2}\pp{v_2}{v_0}=\frac{1}{v_2}v_1=\frac{1}{y}$}}] (v0) at(-8, 0) {$y$};
   \node[Gray, label=left:{\textcolor{blue}{$v_1$}},
-    label=right:{\textcolor{red}{$\adj{v_1}=\adj{v_2}\pp{v_2}{v_1}=\frac{1}{v_2}v_0=\frac{1}{y}$}}] (v1) at(-2, 0) {$x$};
-  \node[Round, label=left:{\textcolor{blue}{$v_2 = v_0 * v_1$}},
-    label=right:{\textcolor{red}{$\adj{v_2}=\adj{v_3}\pp{v_3}{v_2}=1*\frac{1}{v_2}$}}] (v2) at(-4, -2) {$*$};
+    label=right:{\textcolor{red}{$\adj{v_1}=\adj{v_2}\pp{v_2}{v_1}=\frac{1}{v_2}v_0=\frac{1}{x}$}}] (v1) at(-2, 0) {$x$};
+  \node[Round, label=left:{\textcolor{blue}{$v_2 = v_0 \cdot v_1$}},
+    label=right:{\textcolor{red}{$\adj{v_2}=\adj{v_3}\pp{v_3}{v_2}=1\cdot \frac{1}{v_2}$}}] (v2) at(-4, -2) {$\times$};
   \node[Round, label=left:{\textcolor{blue}{$v_3 = \log{v_2}$}},
     label=right:{\textcolor{red}{$\adj{v_3}=\pp{v_3}{v_3}=1$}}] (v3) at(-4, -4) {$\mathcolor{red}{\log}$};
   % Lines
-  \path [<-, draw, thick] (v2) -- (v0);
-  \path [<-, draw, thick] (v2) -- (v1);
-  \path [<-, draw, thick] (v3) -- (v2);
+  \path [->, draw, thick] (v2) -- (v0);
+  \path [->, draw, thick] (v2) -- (v1);
+  \path [->, draw, thick] (v3) -- (v2);
 \end{tikzpicture}
 \end{frame}
 
@@ -706,10 +705,8 @@ Newer AD packages use a combination of both
 Static (Fast) vs. Dynamic (Flexible) graphs
 \begin{itemize}
 \item Known expression graph size at compile time? (Static)
-\item Reassignment of variables (dynamic easy, Static vv hard!)
-\item How much time do I have? (dynamic)
-\pause
-\item Do I actually need to track my graph :)
+\item Reassignment of variables (Dynamic easy, Static hard)
+\item How much time do I have? (Dynamic)
 \end{itemize}
 \end{frame}
 
@@ -717,7 +714,7 @@ Static (Fast) vs. Dynamic (Flexible) graphs
 
 \begin{frame}{Make A Tape}
 \vspace{-1mm}
-$$z = \log(x) * y + \sin(x)$$
+$$z = \log(x) \cdot y + \sin(x)$$
 
 \begin{tikzpicture}
   [
@@ -735,7 +732,7 @@ $$z = \log(x) * y + \sin(x)$$
 
   \node[Round] (v4) at(1, -2) {$\sin$};
 
-  \node[Round] (v5) at(-6, -4) {$*$};
+  \node[Round] (v5) at(-6, -4) {$\times$};
 
   \node[Round] (v6) at(-3, -5.5) {$+$};
 
@@ -752,6 +749,67 @@ $$z = \log(x) * y + \sin(x)$$
 \end{tikzpicture}
 \end{frame}
 
+\begin{frame}{Tape of Expression Graph}
+\begin{equation*}
+f(x, y) = \log(x)y + \sin(x)
+\end{equation*}
+\begin{figure}
+  \begin{tikzpicture}
+  [
+    Round/.style={circle, draw=black!, fill=green!0, thick, minimum size=2mm},
+    Red/.style={circle, draw=black!, fill=red!255, thick, minimum size=2mm},
+    Yellow/.style={circle, draw=black!, fill=yellow!255, thick, minimum size=10mm},
+    Gray/.style={circle, draw=black!, fill=gray!35, thick, minimum size=2mm}
+  ]
+  % Nodes
+  \node[Gray, label=right:{$v_1$}] (v2) at(0, 0) {$x$};
+  \node[Gray, label=right:{$v_2$}] (v1) at(2, 0) {$y$};
+  \node[Round, label=right:{$v_3$}] (v3) at(4, 0) {$\log$};
+  \node[Round, label=right:{$v_4$}] (v4) at(6, 0) {$\sin$};
+  \node[Round, label=right:{$v_5$}] (v5) at(8, 0) {$\times$};
+  \node[Round, label=right:{$v_6$}] (v6) at(10, 0) {$+$};
+
+
+  % Lines
+  \path [->, draw, thick] (v1) to[out=20,in=160] (v5);
+  \path [->, draw, thick] (v2) to[out=-20,in=-160] (v3);
+  \path [->, draw, thick] (v2) to[out=-20,in=-160] (v4);
+  \path [->, draw, thick] (v3) to[out=-20,in=-160] (v5);
+  \path [->, draw, thick] (v4) to[out=40,in=120] (v6);
+  \path [->, draw, thick] (v5) to[out=320,in=210] (v6);
+
+\end{tikzpicture}
+  \begin{tikzpicture}
+  [
+    Round/.style={circle, draw=black!, fill=green!0, thick, minimum size=2mm},
+    Red/.style={circle, draw=black!, fill=red!255, thick, minimum size=2mm},
+    Yellow/.style={circle, draw=black!, fill=yellow!255, thick, minimum size=10mm},
+    Gray/.style={circle, draw=black!, fill=gray!35, thick, minimum size=2mm}
+  ]
+  % Nodes
+  \node[Gray, label=right:{$v_1$}] (v2) at(0, 0) {$x$};
+  \node[Gray, label=right:{$v_2$}] (v1) at(2, 0) {$y$};
+  \node[Round, label=right:{$v_3$}] (v3) at(4, 0) {$\log$};
+  \node[Round, label=right:{$v_4$}] (v4) at(6, 0) {$\sin$};
+  \node[Round, label=right:{$v_5$}] (v5) at(8, 0) {$\times$};
+  \node[Round, label=right:{$v_6$}] (v6) at(10, 0) {$+$};
+
+
+  % Lines
+  \path [<-, draw, thick] (v1) to[out=20,in=160] (v5);
+  \path [<-, draw, thick] (v2) to[out=-20,in=-160] (v3);
+  \path [<-, draw, thick] (v2) to[out=-20,in=-160] (v4);
+  \path [<-, draw, thick] (v3) to[out=-20,in=-160] (v5);
+  \path [<-, draw=red, thick] (v4) to[out=40,in=120] (v6);
+  \path [<-, draw=red, thick] (v5) to[out=320,in=210] (v6);
+
+\end{tikzpicture}
+\caption{Topological sort of expression graph}
+\end{figure}
+\end{frame}
+
+
+\begin{comment}
 \begin{frame}[fragile]{Cool graph math, how do we do this in a computer?}
 \begin{minted}{C++}
 auto foo_fwd(double x, double y);
@@ -790,18 +848,16 @@ auto foo(T1&& x, T2&& y) {
 }
 \end{minted}
 \end{frame}
-
+\end{comment}
 
 \begin{frame}{Operator Overloading Approach}
+The operator overloading approach usually involves:
 \begin{itemize}
-    \item The operator overloading approach usually involves:
-    \begin{itemize}
-        \item Tracking the expression graph for the reverse pass function calls
-        \item A pair scalar type to hold the value and adjoint
-    \end{itemize}
-    \item Very flexible: Allows conditional loops and reassignment of values in matrices
-    \item Nodes of expression graph can be collapsed
+    \item Tracking the expression graph of reverse pass function calls
+    \item A pair scalar type to hold the value and adjoint
 \end{itemize}
+Allows conditional loops and reassignment of values in matrices\\
+Nodes of expression graph can be collapsed
 \centerline{\href{https://godbolt.org/z/je173T18Y}{\textcolor{blue}{Example Godbolt}}}
 \end{frame}
 
@@ -813,9 +869,11 @@ struct var_impl {
   virtual void chain() {}
   var_impl(double val) : val_(val), adj_(0.0) {}
 };
+static std::vector<std::shared_ptr<var_impl>> tape;
 struct var {
   std::shared_ptr<var_impl> vi_;
-  var(double x) : vi_(std::make_shared<var_impl>(x)) {
+  var(std::shared_ptr<var_impl>& vi) : vi_(vi) {
+    tape.push_back(vi);
   }
 };
 \end{minted}
@@ -830,8 +888,6 @@ struct mul_vv final : public var_impl {
   void chain() {
     lhs_.adj() += rhs_.val() * this->adjoint_;
     rhs_.adj() += lhs_.val() * this->adjoint_;
-    lhs_.chain();
-    rhs_.chain();
   }
 };
 operator*(var x, var y) {
@@ -846,7 +902,9 @@ operator*(var x, var y) {
 \begin{minted}{C++}
 void grad(var& v) {
   v.adj() = 1.0;
-  v.chain();
+  for (auto&& x : tape | std::views::reverse) {
+    x->chain();
+  }
 }
 var x(2.0);
 var y(4.0);
@@ -933,99 +991,6 @@ grad(z);
 
 \end{frame}
 
-\begin{frame}{DepthWise}
-\vspace{-1mm}
-$$z = \log(x) * y + \sin(x)$$
-
-\begin{tikzpicture}
-  [
-    Round/.style={circle, draw=black!, fill=green!0, thick, minimum size=2mm},
-    Red/.style={circle, draw=black!, fill=red!255, thick, minimum size=2mm},
-    Yellow/.style={circle, draw=black!, fill=yellow!255, thick, minimum size=10mm},
-    Gray/.style={circle, draw=black!, fill=gray!35, thick, minimum size=2mm}
-  ]
-  % Nodes
-  \node[Gray] (v1) at(-8, 0) {$y$};
-
-  \node[Gray] (v2) at(0, 0) {$x$};
-
-  \node[Round] (v3) at(-4, -2) {$\log$};
-
-  \node[Round] (v4) at(1, -2) {$\sin$};
-
-  \node[Round] (v5) at(-6, -4) {$*$};
-
-  \node[Round] (v6) at(-3, -5.5) {$+$};
-
-
-  % Lines
-  \path [->, draw=red, thick] (v5) -- (v1);
-  \path [->, draw, thick] (v3) -- (v2);
-  \path [->, draw, thick] (v4) -- (v2);
-  \path [->, draw, thick] (v3) -- (v2);
-  \path [->, draw, thick] (v6) -- (v4);
-  \path [->, draw=red, thick] (v6) -- (v5);
-  \path [->, draw, thick] (v5) -- (v3);
-
-\end{tikzpicture}
-\end{frame}
-
-\begin{frame}{Breadthwise}
-$f(x, y) = \log(x)y + \sin(x)$
-\begin{figure}
-  \begin{tikzpicture}
-  [
-    Round/.style={circle, draw=black!, fill=green!0, thick, minimum size=2mm},
-    Red/.style={circle, draw=black!, fill=red!255, thick, minimum size=2mm},
-    Yellow/.style={circle, draw=black!, fill=yellow!255, thick, minimum size=10mm},
-    Gray/.style={circle, draw=black!, fill=gray!35, thick, minimum size=2mm}
-  ]
-  % Nodes
-  \node[Gray, label=right:{$v_1$}] (v2) at(0, 0) {$x$};
-  \node[Gray, label=right:{$v_2$}] (v1) at(2, 0) {$y$};
-  \node[Round, label=right:{$v_3$}] (v3) at(4, 0) {$\log$};
-  \node[Round, label=right:{$v_4$}] (v4) at(6, 0) {$\sin$};
-  \node[Round, label=right:{$v_5$}] (v5) at(8, 0) {$*$};
-  \node[Round, label=right:{$v_6$}] (v6) at(10, 0) {$+$};
-
-
-  % Lines
-  \path [->, draw, thick] (v1) to[out=20,in=160] (v5);
-  \path [->, draw, thick] (v2) to[out=-20,in=-160] (v3);
-  \path [->, draw, thick] (v2) to[out=-20,in=-160] (v4);
-  \path [->, draw, thick] (v3) to[out=-20,in=-160] (v5);
-  \path [->, draw, thick] (v4) to[out=40,in=120] (v6);
-  \path [->, draw, thick] (v5) to[out=320,in=210] (v6);
-
-\end{tikzpicture}
-  \begin{tikzpicture}
-  [
-    Round/.style={circle, draw=black!, fill=green!0, thick, minimum size=2mm},
-    Red/.style={circle, draw=black!, fill=red!255, thick, minimum size=2mm},
-    Yellow/.style={circle, draw=black!, fill=yellow!255, thick, minimum size=10mm},
-    Gray/.style={circle, draw=black!, fill=gray!35, thick, minimum size=2mm}
-  ]
-  % Nodes
-  \node[Gray, label=right:{$v_1$}] (v2) at(0, 0) {$x$};
-  \node[Gray, label=right:{$v_2$}] (v1) at(2, 0) {$y$};
-  \node[Round, label=right:{$v_3$}] (v3) at(4, 0) {$\log$};
-  \node[Round, label=right:{$v_4$}] (v4) at(6, 0) {$\sin$};
-  \node[Round, label=right:{$v_5$}] (v5) at(8, 0) {$*$};
-  \node[Round, label=right:{$v_6$}] (v6) at(10, 0) {$+$};
-
-
-  % Lines
-  \path [<-, draw, thick] (v1) to[out=20,in=160] (v5);
-  \path [<-, draw, thick] (v2) to[out=-20,in=-160] (v3);
-  \path [<-, draw, thick] (v2) to[out=-20,in=-160] (v4);
-  \path [<-, draw, thick] (v3) to[out=-20,in=-160] (v5);
-  \path [<-, draw=red, thick] (v4) to[out=40,in=120] (v6);
-  \path [<-, draw=red, thick] (v5) to[out=320,in=210] (v6);
-
-\end{tikzpicture}
-\caption{Topological sort of expression graph}
-\end{figure}
-\end{frame}
 
 \begin{comment}
 \begin{frame}[fragile]{Operator Overloading Approach: Adolc}
@@ -1083,10 +1048,10 @@ void calc_grad(Tape& tape) {
 \begin{minted}{C++}
 static monotonic_buffer_resource mbr{1<<16};
 static polymorphic_allocator<std::byte> pa{&mbr};
-static std::vector<vari*> vari_vec;
+static std::vector<vari*> tape;
 template <typename T>
 auto& new_vari(double x) {
-  return *vari_vec.emplace_back(pa.new_object<T>(x, 0.0));
+  return *tape.emplace_back(pa.new_object<T>(x, 0.0));
 }
 struct vari {
   double val;
@@ -1114,7 +1079,7 @@ struct var {
   \CacheColor{7}{red!60}
 \end{CacheLine}
 \end{frame}
-
+\begin{comment}
 \begin{frame}[fragile]{Monotonic Buffer}
 \begin{minted}{C++}
 struct LogVari : vari {
@@ -1142,7 +1107,7 @@ inline var log(var x) {
   \CacheColor{7}{red!60}
 \end{CacheLine}
 \end{frame}
-
+\end{comment}
 \begin{frame}[fragile]{Monotonic Buffer}
 \begin{minted}{C++}
 struct mul_vv : public var_impl {
@@ -1157,7 +1122,7 @@ struct mul_vv : public var_impl {
 \centering
 \begin{CacheLine}
   % Color some blocks
-  \CacheMarkBelow{0}{AddVari\{dbl, dbl, vptr, vari*, vari*\}}
+  \CacheMarkBelow{0}{mul\_vv\{dbl, dbl, vptr, vari*, vari*\}}
   \CacheColor{0}{green!60}
   \CacheColor{1}{green!60}
   \CacheColor{2}{green!60}
@@ -1173,7 +1138,7 @@ struct mul_vv : public var_impl {
 \begin{minted}[escapeinside=||]{C++}
 void grad(var z) {
   z.adj() = 1;
-  for (auto& x : vari_vec | std::views::reverse) {
+  for (auto& x : tape | std::views::reverse) {
     x->chain();
   }
 }
@@ -1182,16 +1147,8 @@ var y = 2;
 var z = log(x * y);
 grad(z);
 // Do what we want with x and y adjoints then clear
-vari_vec.clear();
+tape.clear();
 mbr.release();
-\end{minted}
-\end{frame}
-
-\begin{frame}[fragile]{Monotonic Buffer}
-\begin{minted}[escapeinside=||]{C++}
-for (auto& x : vari_vec | std::views::reverse) {
-  x->chain();
-}
 \end{minted}
 \end{frame}
 
@@ -1207,6 +1164,7 @@ struct callback_vari : public vari {
       rev_functor_(rev_functor) {}
   void chain() final { rev_functor_(*this); }
 }; // 24 + 8B * N
+// Helper for callback_vari
 template <std::floating_point T, typename F>
 auto lambda_var(T val, F&& rev_functor) {
   return var(
@@ -1220,51 +1178,71 @@ auto lambda_var(T val, F&& rev_functor) {
 \begin{frame}[fragile]{Reduce Boilerplate}
 \begin{minted}[escapeinside=||]{C++}
 template <float_or_var T1, float_or_var T2>
-inline auto operator+(T1 lhs, T2 rhs) {
-  return lambda_var(value(lhs) + value(rhs),
+inline auto operator*(T1 lhs, T2 rhs) {
+  return lambda_var(value(lhs) * value(rhs),
     [lhs, rhs](auto&& ret) mutable {
       if constexpr (is_var_v<T1>) {
-        adjoint(lhs) += adjoint(ret);
+        adjoint(lhs) += adjoint(ret) * value(rhs);
       }
       if constexpr (is_var_v<T2>) {
-        adjoint(rhs) += adjoint(ret);
+        adjoint(rhs) += adjoint(ret) * value(lhs);
       }
     });
 }
 \end{minted}
 \end{frame}
 
-\begin{frame}{Comparison}
-\begin{table}
-  \centering % Centers the table on the page
-  \caption{$f(x, y) = x * \log(y) + \log(x * y) * y$;} % Table caption
-  \label{tab:firsttable} % Label for referencing
-  \begin{tabular}{|l|r|c|} % Three columns: left, center, right, with vertical lines
-    \hline % Top horizontal line
-    Method & CPU Time & \% Improvement \\ % First row (headers)
-    \hline % Line after headers
-    Shared Ptr & 508ns & 1.0 \\
-    MonoBuff   & 130ns & 3.9x \\
-    Lambda     & 120ns & 4.2x \\
-    SCT        &  84ns & 6.0x \\
-    \hline % Bottom horizontal line
-  \end{tabular}
-\end{table}
+\begin{frame}[fragile]{Source Code Transform}
+\begin{minted}{C++}
+  blah
+\end{minted}
 \end{frame}
 
 \begin{frame}[fragile]{Operator Overloading Approach: Matrices}
 \begin{minted}{C++}
+struct Matrix<var> {
+  var* data_;
+};
 Matrix<var> B(M, M);
 Matrix<var> X(M, M);
 Matrix<var> Z = X * B.transpose();
 \end{minted}
 \begin{itemize}
-    \item Array of Structs:
+    \item Array of Structs: 
     \begin{itemize}
         \item Simple, most algorithms Just Work\texttrademark
         \item Adds a lot to expression graph
         \item turns off SIMD
     \end{itemize}
+\end{itemize}
+\pause
+\centering
+\begin{CacheLine}
+  % Color some blocks
+  \CacheMarkBelow{0}{mul\_vv\{dbl, dbl, vptr, vari*, vari*\}}
+  \CacheColor{0}{green!60}
+  \CacheColor{1}{green!60}
+  \CacheColor{2}{green!60}
+  \CacheColor{3}{green!60}
+  \CacheColor{4}{green!60}
+  \CacheColor{5}{red!60}
+  \CacheColor{6}{red!60}
+  \CacheColor{7}{red!60}
+\end{CacheLine}
+\end{frame}
+
+\begin{frame}[fragile]{Operator Overloading Approach: Matrices}
+\begin{minted}{C++}
+struct vari<Matrix<double>> {
+  double* value_;
+  double* adjoint_;
+  virtual void chain() {}
+};
+var<Matrix<double>> B(M, M);
+var<Matrix<double>> X(M, M);
+var<Matrix<double>> Z = X * B.transpose();
+\end{minted}
+\begin{itemize}
     \item Struct of Arrays:
     \begin{itemize}
         \item Hard, everything written out manually
@@ -1274,30 +1252,37 @@ Matrix<var> Z = X * B.transpose();
 \end{itemize}
 \end{frame}
 
+\begin{frame}[fragile]{Matrix Multiplication Example}
+\begin{minted}[escapeinside=||]{C++}
+template <matrix_float_or_var T1, matrix_float_or_var T2>
+inline auto operator*(T1&& lhs, T2&& rhs) {
+  return lambda_var(value(lhs) * value(rhs),
+    [lhs, rhs](auto&& ret) mutable {
+      if constexpr (is_var_matrix_v<T1>) {
+        adjoint(lhs) += adjoint(ret) * value(rhs).transpose();
+      }
+      if constexpr (is_var_matrix_v<T2>) {
+        adjoint(rhs) += value(lhs) * adjoint(ret);
+      }
+    });
+}
+\end{minted}
+\end{frame}
 
 \begin{frame}[fragile]{Operator Overloading Approach: Matrices}
-\begin{itemize}
-    \item Either Array of Structs (AOS) or Struct of Arrays (SoA)
-\end{itemize}
-
-\begin{minted}[escapeinside=||]{C++}
-struct var {
-  double value_;
-  double adjoint_;
-};
-struct MatrixVar {
-  var* data_;
-  MatrixVar(std::size_t N) :
-   data_(static_cast<var*>(malloc(sizeof(var) * N))) {}
-}
-MatrixVar aos_matrix;
-
-struct VarMatrix {
-  double* value_;
-  double* adjoint_;
-}
-VarMatrix soa_matrix;
-\end{minted}
+\centering
+\begin{CacheLine}
+  % Color some blocks
+  \CacheMarkBelow{0}{mat\_mul\_vv\{dbl*, dbl*, vptr, lambda[vari<Matrix>*, vari<Matrix>*]\}}
+  \CacheColor{0}{green!60}
+  \CacheColor{1}{green!60}
+  \CacheColor{2}{green!60}
+  \CacheColor{3}{green!60}
+  \CacheColor{4}{green!60}
+  \CacheColor{5}{red!60}
+  \CacheColor{6}{red!60}
+  \CacheColor{7}{red!60}
+\end{CacheLine}
 \end{frame}
 
 \begin{frame}[fragile]{Source Code Transform Ex:}
@@ -1326,143 +1311,45 @@ while(error < tolerance) {
 \end{minted}
 \end{frame}
 
-
-\begin{frame}{What are the AD packages like?}
-\centering
-    \begin{tikzpicture}[scale=2.5] % Adjust the scale as needed to fit the slide
-        % Define equilateral triangle points
-        \coordinate (A) at (0,0);
-        \coordinate (B) at (2,0);
-        \coordinate (C) at (1,1.73); % Using Pythagoras theorem for height
-
-        % Draw the triangle
-        \draw (A) -- (B) -- (C) -- cycle;
-
-        % Label the points
-        \node[below] at (A) {Performance};
-        \node[below] at (B) {Scaling};
-        \node[above] at (C) {Flexibility};
-        \node[label=right:{Enzyme.jl}] (enzyme) at(.7, .55) {$+$};
-        \node[label=left:{Stan}] (stan) at(.4, .65) {$+$};
-        \node[label=below:{Tensorflow}] (tf) at(1.25, -0.1) {$+$};
-        \node[label=right:{PyTorch}] (pytorch) at(1.55, .75) {$+$};
-        \node[label=right:{Jax}] (jax) at(1.25, 0.25) {$+$};
-    \end{tikzpicture}
+\begin{frame}[fragile]{Source Code Transform Ex:}
+Code like the following very hard / impossible in source code transform
+\begin{minted}[escapeinside=||]{C++}
+template <typename Expr1, typename Expr2>
+auto operator*()(Expr1&& op1, Expr2&& op2) {
+  return expr_t{
+    [](auto&& op1, auto&& op2) static {
+      return value(op1) * value(op2);
+    },
+    [](auto&& ret, auto&& op1, auto&& op2) static {
+      if constexpr (is_var_v<Expr1>) {
+        adjoint(op1) += adjoint(ret) * value(op2);
+      }
+      if constexpr (is_var_v<Expr2>) {
+        adjoint(op2) += adjoint(ret) * value(op1);
+      }
+    },
+    std::forward<Expr1>(op1), 
+    std::forward<Expr2>(op2)};
+}
+\end{minted}
 \end{frame}
 
-\begin{frame}{What are the AD packages like?}
-Disclaimer: Just pick the package that does the things you like, the ones here are performant enough\\
-\\
-Common Autodiff Packages
-\begin{itemize}
-\item Static Graph
-  \begin{itemize}
-    \item TensorFlow, Jax, Enzyme
- \end{itemize}
- \item Dynamic Graph
- \begin{itemize}
-     \item Pytorch and Stan
- \end{itemize}
- \item TF, Jax, and Pytorch now have both
-\end{itemize}
-\end{frame}
-
-\begin{frame}{Stan!}
-Good:
-\begin{itemize}
-    \item Very flexible language
-    \item Exceptions, conditionals loops, matrix subsetting
-    \item Only known CPU AD package faster than Stan math is \href{https://godbolt.org/z/6PG475K1W}{\textcolor{blue}{FastAD}}
-    \item Simple C like Domain Specific Language (DSL)
-\end{itemize}
-Bad:
-\begin{itemize}
-    \item Very limited GPU support at the language level
-    \item Poor scaling for TB of data
-    \item Simple C like Domain Specific Language (DSL)
-    \item Compilation times
-\end{itemize}
-\end{frame}
-
-\begin{frame}{Pytorch}
-Good:
-\begin{itemize}
-    \item Good multi-gpu support
-    \item Exceptions, conditional loops, debugging first priority
-    \item Builtins for neural networks
-    \item Extensible (see \href{https://github.com/flatironinstitute/pytorch-finufft}{pytorch-finufft})
-\end{itemize}
-Bad:
-\begin{itemize}
-    \item Subset assignment to matrices and vectors is a full hard copy
-    \item Backend is very hard to parse
-\end{itemize}
-\end{frame}
-
-\begin{frame}{Tensorflow}
-Good:
-\begin{itemize}
-    \item Made for scalability
-\end{itemize}
-Bad:
-\begin{itemize}
-    \item No conditional loops
-    \item No subset assignment to matrices and vectors
-    \item No exceptions
-\end{itemize}
-\end{frame}
-
-\begin{frame}{Jax}
-Good:
-\begin{itemize}
-    \item Built on top of autograd and XLA
-    \item Well documented
-    \item Extendable
-    \item Write python, jit to near C++ speed
-\end{itemize}
-Bad:
-\begin{itemize}
-    \item No Exceptions, conditional loops, subset assignment to matrices and vectors is a full hard copy
-\end{itemize}
-\end{frame}
-
-\begin{frame}{Enzyme.jl}
-Good:
-\begin{itemize}
-    \item JIT compiled to llvm
-    \item Can use a large amount of julia packages
-\end{itemize}
-Bad:
-\begin{itemize}
-    \item Only one main maintainer
-    \item Not yet 1.0 (0.1)
-    \item No GC or dynamic dispatch support
-\end{itemize}
-\end{frame}
-% Slide
-\begin{frame}{What did we talk about?}
-   \begin{itemize}
-    \item[-] What's Automatic Differentiation (AD)?
-    \begin{itemize}
-        \item Evaluates partial derivatives of a program
-    \end{itemize}
-    \item[-] Why should you care?
-    \begin{itemize}
-        \item It's important and used a lot
-    \end{itemize}
-    \item[-] What's an expression graph?
-    \begin{itemize}
-        \item Graphic to describe dependencies for AD
-    \end{itemize}
-    \item[-] How is AD implemented
-    \begin{itemize}
-        \item Source code is transformed (static graph) or objects are made for intermediate ops (dynamic graph)
-    \end{itemize}
-    \item[-] What are the tradeoffs between different AD packages
-    \begin{itemize}
-        \item Flexibility, Efficiency, and Scale
-    \end{itemize}
-   \end{itemize}
+\begin{frame}{Comparison}
+\begin{table}
+  \centering % Centers the table on the page
+  \caption{$f(x, y) = x\log(y) + \log(xy) y$;} % Table caption
+  \label{tab:firsttable} % Label for referencing
+  \begin{tabular}{|l|r|c|} % Three columns: left, center, right, with vertical lines
+    \hline % Top horizontal line
+    Method & CPU Time & \% Improvement \\ % First row (headers)
+    \hline % Line after headers
+    Shared Ptr & 508ns & 1.0 \\
+    MonoBuff   & 130ns & 3.9x \\
+    Lambda     & 120ns & 4.2x \\
+    Source Code Transform        &  84ns & 6.0x \\
+    \hline % Bottom horizontal line
+  \end{tabular}
+\end{table}
 \end{frame}
 
 \end{document}
