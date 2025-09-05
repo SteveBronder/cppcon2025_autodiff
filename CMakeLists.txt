@@ -24,4 +24,4 @@ if (NOT CMAKE_BUILD_TYPE)
 endif()
 message(STATUS "Compiling in ${CMAKE_BUILD_TYPE} mode")
 
-add_subdirectory(${PROJECT_SOURCE_DIR}/code/benchmarks)
+add_subdirectory(${PROJECT_SOURCE_DIR}/code)

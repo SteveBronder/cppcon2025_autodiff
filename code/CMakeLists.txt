@@ -1,38 +1,66 @@
-cmake_minimum_required(VERSION 3.20.2)
-project(
-    cppcon2025_autodiff
-    VERSION 0.0.1
-    LANGUAGES C CXX)
-
-set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_CXX_STANDARD_REQUIRED YES)
-set(CMAKE_CXX_EXTENSIONS NO)
-set(CMAKE_VERBOSE_MAKEFILE YES)
 include(FetchContent)
-# Externally provided libraries
+set(BENCHMARK_ENABLE_TESTING       OFF CACHE BOOL "" FORCE)
+set(BENCHMARK_ENABLE_GTEST_TESTS   OFF CACHE BOOL "" FORCE)
+set(BENCHMARK_ENABLE_EXCEPTIONS     ON CACHE BOOL "" FORCE)
+set(BENCHMARK_DOWNLOAD_DEPENDENCIES OFF CACHE BOOL "" FORCE)
+set(BENCHMARK_ENABLE_LTO ON CACHE BOOL "" FORCE)
+add_compile_options(-Wno-error)
+# try a system one first
+
+message(STATUS "Fetching google/benchmark (main)")
+FetchContent_Declare(benchmark
+  GIT_REPOSITORY https://github.com/google/benchmark.git
+  GIT_TAG        main
+  GIT_SHALLOW    TRUE
+)
+FetchContent_MakeAvailable(benchmark)
 FetchContent_Declare(googletest
-        GIT_REPOSITORY https://github.com/google/googletest.git
-        GIT_TAG main)
+  GIT_REPOSITORY https://github.com/google/googletest.git
+  GIT_TAG        main
+  GIT_SHALLOW    TRUE
+)
+FetchContent_MakeAvailable(googletest)
+include(FetchContent)
+set(EIGEN_TAG "f426eff949a989b415dd19f59ae1d5c7e107566a")
 
-FetchContent_Declare(googlebenchmark
-        GIT_REPOSITORY https://github.com/google/benchmark.git
-        GIT_TAG main) # need master for benchmark::benchmark
-
+# ----------------------------------------------------------------------
+# Common discovery fallbacks
+# ----------------------------------------------------------------------
+# Eigen3 (many of your targets link Eigen3::Eigen). Provide a fallback.
+set(ENABLE_TESTING OFF CACHE BOOL "" FORCE)
+set(EIGEN_ENABLE_TESTING OFF CACHE BOOL "" FORCE)
 FetchContent_Declare(
   Eigen
   GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
-  GIT_TAG 3.4.0)
-# note: To disable eigen tests,
-# you should put this code in a add_subdirectory to avoid to change
-# BUILD_TESTING for your own project too since variables are directory
-# scoped
-set(BUILD_TESTING OFF)
-set(EIGEN_BUILD_PKGCONFIG OFF)
-set(EIGEN_BUILD_DOC OFF)
-FetchContent_MakeAvailable(
-        googletest
-        googlebenchmark
-        Eigen)
+  GIT_TAG        ${EIGEN_TAG}
+  GIT_SHALLOW    TRUE
+)
+FetchContent_MakeAvailable(Eigen)
 
-add_subdirectory(benchmarks)
-add_subdirectory(examples)
+set(SCALAR_EXECUTABLES
+    baseline
+    shared_ptr
+    mono_buffer
+    lambda
+    sct
+)
+
+foreach(exe ${SCALAR_EXECUTABLES})
+    add_executable(${exe} ${exe}.cpp)
+    target_compile_options(${exe} PRIVATE -march=native -mtune=native -O3 -g0)
+    target_link_libraries(${exe} PRIVATE benchmark::benchmark benchmark::benchmark_main)
+    target_include_directories(${exe} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+endforeach()
+
+set(MATRIX_EXECUTABLES
+    lambda_eigen
+    lambda_eigen_special
+    lambda_var_eigen
+)
+
+foreach(exe ${MATRIX_EXECUTABLES})
+    add_executable(${exe} ${exe}.cpp)
+    target_compile_options(${exe} PRIVATE -march=native -mtune=native -O3 -g0)
+    target_link_libraries(${exe} PRIVATE benchmark::benchmark benchmark::benchmark_main Eigen3::Eigen)
+    target_include_directories(${exe} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+endforeach()

@@ -216,11 +216,11 @@ Computational technique for evaluating derivatives of functions expressed as com
 \end{frame}
 
 \begin{frame}{Why use Automatic Differentiation}
-Ex: Newton's root finding method 
+Ex: Newton's root finding method
 \begin{equation*}
     x_{n+1} = x_n - \frac{f\left(x_n\right)}{f\,'\left(x_{n}\right)}
 \end{equation*}
-find $f(x)=y$ where $y=0$ 
+find $f(x)=y$ where $y=0$
 \end{frame}
 \note{
 How do we estimate solutions for equations? A simple method is the newton method.
@@ -239,15 +239,15 @@ For models we want to estimate parameter values. Change the slide here so that w
 
 \begin{frame}{Why use Automatic Differentiation?}
 \begin{itemize}
-    \item Hamiltonian Monte Carlo: 
+    \item Hamiltonian Monte Carlo:
     \begin{itemize}
     \item $\frac{dp}{dt}=-\nabla_\theta\log p(\theta|y)$
     \end{itemize}
-    \item BFGS: 
+    \item BFGS:
     \begin{itemize}
     \item $s_k=-H_k \nabla_\theta f(\theta_k)$
     \end{itemize}
-    \item Stochastic Gradient Descent: 
+    \item Stochastic Gradient Descent:
     \begin{itemize}
     \item $\theta_{t+1}=\theta_t−\eta\nabla_\theta L(\theta_t;x_t)$
     \end{itemize}
@@ -377,6 +377,7 @@ u_g\sim\mathcal N(0,\sigma_u^2).
 
 \begin{frame}{Goal of this talk}
 \begin{itemize}
+    \item Explain autodiff in layman's terms
     \item Understand performance of high throughput memory intensive programs
     \item Show how modern C++ has led to cleaner and more efficient AD
 \end{itemize}
@@ -882,12 +883,12 @@ struct var {
 \begin{frame}[fragile]{Operator Overloading: Simple}
 \begin{minted}{C++}
 struct mul_vv final : public var_impl {
-  var lhs_;
-  var rhs_;
-  mul_vv(double val, var lhs, var rhs) : var_impl(val), lhs_(lhs), rhs_(rhs) {}
+  var op1_;
+  var op2_;
+  mul_vv(double val, var op1, var op2) : var_impl(val), op1_(op1), op2_(op2) {}
   void chain() {
-    lhs_.adj() += rhs_.val() * this->adjoint_;
-    rhs_.adj() += lhs_.val() * this->adjoint_;
+    op1_.adj() += op2_.val() * this->adjoint_;
+    op2_.adj() += op1_.val() * this->adjoint_;
   }
 };
 operator*(var x, var y) {
@@ -1064,6 +1065,7 @@ struct var {
   vi_(new_vari<vari>(val)) {}
 }; // 8 bytes
 \end{minted}
+\begin{comment}
 \centering
 \begin{CacheLine}
   % Color some blocks
@@ -1078,6 +1080,7 @@ struct var {
   \CacheColor{6}{red!60}
   \CacheColor{7}{red!60}
 \end{CacheLine}
+\end{comment}
 \end{frame}
 \begin{comment}
 \begin{frame}[fragile]{Monotonic Buffer}
@@ -1111,11 +1114,11 @@ inline var log(var x) {
 \begin{frame}[fragile]{Monotonic Buffer}
 \begin{minted}{C++}
 struct mul_vv : public var_impl {
-  vari* lhs_;
-  vari* rhs_;
+  vari* op1_;
+  vari* op2_;
   void chain() {
-    lhs_->adjoint_ += this->adjoint_ * rhs_->value_;
-    rhs_->adjoint_ += this->adjoint_ * lhs_->value_;
+    op1_->adjoint_ += this->adjoint_ * op2_->value_;
+    op2_->adjoint_ += this->adjoint_ * op1_->value_;
   }
 }; // 40 bytes
 \end{minted}
@@ -1152,6 +1155,23 @@ mbr.release();
 \end{minted}
 \end{frame}
 
+\begin{frame}[fragile]{So Many Operator Classes}
+\begin{minted}{C++}
+struct mul_vv;
+struct mul_vd;
+struct mul_dv;
+struct add_vv;
+struct add_dv;
+struct add_vd;
+struct subtract_vv;
+struct subtract_dv;
+struct subtract_vd;
+struct divide_vv;
+struct divide_dv;
+struct divide_vd;
+\end{minted}
+\end{frame}
+
 
 \begin{frame}[fragile]{Reduce Boilerplate}
 \begin{minted}[escapeinside=||]{C++}
@@ -1168,7 +1188,7 @@ struct callback_vari : public vari {
 template <std::floating_point T, typename F>
 auto lambda_var(T val, F&& rev_functor) {
   return var(
-    new_vari<callback_vari<T, F>>(
+    new_vari<callback_vari<F>>(
       std::forward<T>(val),
       std::forward<F>(rev_functor)));
 }
@@ -1177,15 +1197,16 @@ auto lambda_var(T val, F&& rev_functor) {
 
 \begin{frame}[fragile]{Reduce Boilerplate}
 \begin{minted}[escapeinside=||]{C++}
-template <float_or_var T1, float_or_var T2>
-inline auto operator*(T1 lhs, T2 rhs) {
-  return lambda_var(value(lhs) * value(rhs),
-    [lhs, rhs](auto&& ret) mutable {
+template <typename T1, typename T2>
+requires any_var<T1, T2>
+inline auto operator*(T1 op1, T2 op2) {
+  return lambda_var(value(op1) * value(op2),
+    [op1, op2](auto&& ret) mutable {
       if constexpr (is_var_v<T1>) {
-        adjoint(lhs) += adjoint(ret) * value(rhs);
+        adjoint(op1) += adjoint(ret) * value(op2);
       }
       if constexpr (is_var_v<T2>) {
-        adjoint(rhs) += adjoint(ret) * value(lhs);
+        adjoint(op2) += adjoint(ret) * value(op1);
       }
     });
 }
@@ -1208,7 +1229,7 @@ Matrix<var> X(M, M);
 Matrix<var> Z = X * B.transpose();
 \end{minted}
 \begin{itemize}
-    \item Array of Structs: 
+    \item Array of Structs:
     \begin{itemize}
         \item Simple, most algorithms Just Work\texttrademark
         \item Adds a lot to expression graph
@@ -1253,16 +1274,17 @@ var<Matrix<double>> Z = X * B.transpose();
 \end{frame}
 
 \begin{frame}[fragile]{Matrix Multiplication Example}
-\begin{minted}[escapeinside=||]{C++}
-template <matrix_float_or_var T1, matrix_float_or_var T2>
-inline auto operator*(T1&& lhs, T2&& rhs) {
-  return lambda_var(value(lhs) * value(rhs),
-    [lhs, rhs](auto&& ret) mutable {
+\begin{minted}{C++}
+template <typename T1, typename T2>
+requires any_var<T1, T2>
+inline auto operator*(T1&& op1, T2&& op2) {
+  return lambda_var(value(op1) * value(op2),
+    [op1, op2](auto&& ret) mutable {
       if constexpr (is_var_matrix_v<T1>) {
-        adjoint(lhs) += adjoint(ret) * value(rhs).transpose();
+        adjoint(op1) += adjoint(ret) * value(op2).transpose();
       }
       if constexpr (is_var_matrix_v<T2>) {
-        adjoint(rhs) += value(lhs) * adjoint(ret);
+        adjoint(op2) += value(op1) * adjoint(ret);
       }
     });
 }
@@ -1312,24 +1334,53 @@ while(error < tolerance) {
 \end{frame}
 
 \begin{frame}[fragile]{Source Code Transform Ex:}
-Code like the following very hard / impossible in source code transform
 \begin{minted}[escapeinside=||]{C++}
-template <typename Expr1, typename Expr2>
-auto operator*()(Expr1&& op1, Expr2&& op2) {
-  return expr_t{
-    [](auto&& op1, auto&& op2) static {
-      return value(op1) * value(op2);
-    },
-    [](auto&& ret, auto&& op1, auto&& op2) static {
-      if constexpr (is_var_v<Expr1>) {
-        adjoint(op1) += adjoint(ret) * value(op2);
-      }
-      if constexpr (is_var_v<Expr2>) {
-        adjoint(op2) += adjoint(ret) * value(op1);
-      }
-    },
-    std::forward<Expr1>(op1), 
-    std::forward<Expr2>(op2)};
+struct var {
+    double values_;
+    double adjoints_;
+    var(double x) : values_(x), adjoints_(0) {}
+    auto val() const {
+      return values_;
+    }
+    auto& adj() {
+      return adjoints_;
+    }
+};
+
+\end{minted}
+\end{frame}
+
+\begin{frame}[fragile]{Source Code Transform Ex:}
+\begin{minted}[escapeinside=||]{C++}
+template <typename F, typename... Exprs>
+struct ad_expr {
+   var ret_;
+   std::tuple<deduce_ownership_t<Exprs>...> exprs_;
+   std::decay_t<F> f_;
+   template <typename FF, typename... Args>
+   ad_expr(double x, FF&& f, Args&&... args) :
+     ret_(x), f_(std::forward<F>(f)),
+     exprs_(std::forward<Args>(args)...) {}
+   auto val() { return ret_.val();}
+   auto& adj() { return ret_.adj();}
+};
+\end{minted}
+\end{frame}
+
+\begin{frame}[fragile]{Source Code Transform Ex:}
+\begin{minted}[escapeinside=||]{C++}
+template <typename T1, typename T2>
+requires any_var_or_expr<T1, T2>
+inline auto operator*(T1&& lhs, T2&& rhs) {
+  return make_expr(value(lhs) * value(rhs),
+  [](auto&& ret, auto&& lhs, auto&& rhs) {
+    if constexpr (!std::is_arithmetic_v<T1>) {
+      adjoint(lhs) += adjoint(ret) * value(rhs);
+    }
+    if constexpr (!std::is_arithmetic_v<T2>) {
+      adjoint(rhs) += adjoint(ret) * value(lhs);
+    }
+  }, std::forward<T1>(lhs), std::forward<T2>(rhs));
 }
 \end{minted}
 \end{frame}
@@ -1344,9 +1395,10 @@ auto operator*()(Expr1&& op1, Expr2&& op2) {
     Method & CPU Time & \% Improvement \\ % First row (headers)
     \hline % Line after headers
     Shared Ptr & 508ns & 1.0 \\
-    MonoBuff   & 130ns & 3.9x \\
-    Lambda     & 120ns & 4.2x \\
-    Source Code Transform        &  84ns & 6.0x \\
+    MonoBuff   & 121ns & 3.9x \\
+    Lambda     & 112ns & 4.2x \\
+    Source Code Transform        &  26.5ns & 19x \\
+    Baseline & 0.282ns & A Lotx\\
     \hline % Bottom horizontal line
   \end{tabular}
 \end{table}
