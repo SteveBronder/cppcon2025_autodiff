@@ -21,7 +21,7 @@ FetchContent_Declare(googletest
 )
 FetchContent_MakeAvailable(googletest)
 include(FetchContent)
-set(EIGEN_TAG "f426eff949a989b415dd19f59ae1d5c7e107566a")
+set(EIGEN_TAG "e5f3fa2d6143e3c781b5ee51b3c2b04a0fc3f5d8")
 
 # ----------------------------------------------------------------------
 # Common discovery fallbacks

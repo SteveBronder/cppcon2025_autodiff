@@ -1,8 +1,12 @@
 %Use 16:9
 \documentclass[dvipsnames]{beamer}
+\title{Reverse Mode Automatic Differentiation: Unraveling Expression Graphs \& Library Magic}
+\author{Steve Bronder}
+\date{September 2025}
+
 \usepackage{graphicx} % Required for inserting images
 \usepackage{xcolor}
-\definecolor{codebg}{HTML}{0D1117} % GitHub Dark background
+\definecolor{codebg}{HTML}{1f2937} % GitHub Dark background
 \usepackage[newfloat]{minted}
 \usepackage{fontspec}
 \setmonofont{Fira Code}
@@ -16,7 +20,7 @@
 \setminted{
   breaklines,
   breakanywhere,
-  linenos,
+%  linenos,
   numbersep=6pt,
   fontsize=\footnotesize,
   xleftmargin=1em,
@@ -119,9 +123,6 @@
 \newcommand{\CacheSetBelow}[1]{\def\CacheBelow{#1}}
 % ---------------------------------------------------------------------------
 
-\title{Reverse Mode Automatic Differentiation: Unraveling Expression Graphs \& Library Magic}
-\author{Steve Bronder}
-\date{October 2023}
 
 \def\mathcolor#1#{\@mathcolor{#1}}
 \def\@mathcolor#1#2#3{%
@@ -149,8 +150,21 @@
 \expandafter\def\expandafter\insertshorttitle\expandafter{%
   \insertshorttitle\hfill%
   \insertframenumber\,/\,\inserttotalframenumber}
-\maketitle
+%\maketitle
 % Slide
+
+{ % all template changes are local to this group.
+    \setbeamertemplate{navigation symbols}{}
+    \begin{frame}<article:0>[plain]
+        \begin{tikzpicture}[remember picture,overlay]
+            \node[at=(current page.center)] {
+                \includegraphics[keepaspectratio,
+                                 width=\paperwidth,
+                                 height=\paperheight]{img/title_card.png}
+            };
+        \end{tikzpicture}
+     \end{frame}
+}
 
 \begin{comment}
 
@@ -225,7 +239,7 @@ find $f(x)=y$ where $y=0$
 \note{
 How do we estimate solutions for equations? A simple method is the newton method.
 Why are gradients useful? We use gradients to solve
-For models we want to estimate parameter values. Change the slide here so that we show how to solve for parameters using newtons method
+For models we want to estimate parameter values. Change the slide here so that we show how to solve for parameters using Newton's method
 }
 
 \begin{frame}{Why use Automatic Differentiation?}
@@ -439,14 +453,9 @@ $$z = \log(x*y)$$
   ]
   % Nodes
   \node[Gray] (v0) at(-8, 0) {$y$};
-
   \node[Gray] (v1) at(0, 0) {$x$};
-
   \node[Round] (v2) at(-4, -2) {$*$};
-
   \node[Round] (v3) at(-6, -4) {$\log$};
-
-
 
   % Lines
   \path [<-, draw, thick] (v2) -- (v0);
@@ -1307,6 +1316,86 @@ inline auto operator*(T1&& op1, T2&& op2) {
 \end{CacheLine}
 \end{frame}
 
+\begin{frame}{Operator Overloading Approach: Matrices}
+TODO: Benchmark
+\end{frame}
+
+\begin{frame}[fragile]{Subset Assignment}
+\vspace{-1mm}
+\begin{minted}{C++}
+var<Vector<double>> y{{0, 1, 2, 3}}; 
+var<Vector<double>> x{{0, 1, 2, 3}}; 
+var prod = y.dot(x);
+x.slice(1, 3) = x.head(3); 
+auto z = prod + sum(x);
+\end{minted}
+\pause
+\begin{tikzpicture}
+  [
+    Round/.style={circle, draw=black!, fill=green!0, thick, minimum size=2mm},
+    Red/.style={circle, draw=black!, fill=red!255, thick, minimum size=2mm},
+    Yellow/.style={circle, draw=black!, fill=yellow!255, thick, minimum size=10mm},
+    Gray/.style={circle, draw=black!, fill=gray!35, thick, minimum size=2mm}
+  ]
+  % Nodes (x, y)
+  \node[Gray] (v0) at(-2.5, 0) {\texttt{X}};
+  \node[Gray] (v1) at(3, 0) {\texttt{Y}};
+  \small
+  \node[Gray] (v2) at(-1, -1.5) {\texttt{head}};
+  \node[Gray] (v3) at(-4, -1.5) {\texttt{slice}};
+  \normalsize
+  \node[Round] (v4) at(-2.5, -3) {\texttt{=}};
+  \small
+  \node[Red] (v5) at(2, -1.5) {\texttt{dot}};
+  \node[Red] (v6) at(0, -3.75) {\texttt{sum}};
+  \normalsize
+  \node[Gray] (v7) at(2, -4.5) {\texttt{+}};
+
+  % Lines
+  % X.head()
+  \path [<-, draw, thick] (v2) -- (v0);
+  % X.slice()
+  \path [<-, draw, thick] (v3) -- (v0);
+  % = x.head()
+  \path [<-, draw, thick] (v4) -- (v2);
+  % x.slice() =
+  \path [<-, draw, thick] (v4) -- (v3);
+  % dot(x, _)
+  \path [<-, draw, thick] (v5) -- (v0);
+  % dot(_, y)
+  \path [<-, draw, thick] (v5) -- (v1);
+  % = -> sum(x)
+  \path [<-, draw, thick] (v6) -- (v4);
+  % sum(x) + _
+  \path [<-, draw, thick] (v7) -- (v5);
+  % _ + dot
+  \path [<-, draw, thick] (v7) -- (v6);
+
+\end{tikzpicture}
+\end{frame}
+
+
+\begin{frame}[fragile]{Subset Assignment Becomes Very Hard}
+\begin{minted}{C++}
+var<Vector<double>> x{{0, 1, 2, 3}}; 
+x.slice(1, 3) = x.head(3); 
+\end{minted}
+
+\begin{table}
+  \centering % Centers the table on the page
+  \label{tab:firsttable} % Label for referencing
+  \begin{tabular}{|l|r|c|} % Three columns: left, center, right, with vertical lines
+    \hline % Top horizontal line
+    Iter & X \\ % First row (headers)
+    \hline % Line after headers
+    0 & \{0, 0, 2, 3\} \\
+    1 & \{0, 0, 0, 3\} \\
+    2 & \{0, 0, 0, 0\} \\
+    \hline % Bottom horizontal line
+  \end{tabular}
+\end{table}
+\end{frame}
+
 \begin{frame}[fragile]{Source Code Transform Ex:}
 \begin{minted}[escapeinside=||]{C++}
 double z = log(x * y);
@@ -1339,12 +1428,8 @@ struct var {
     double values_;
     double adjoints_;
     var(double x) : values_(x), adjoints_(0) {}
-    auto val() const {
-      return values_;
-    }
-    auto& adj() {
-      return adjoints_;
-    }
+    auto val() const { return values_; }
+    auto& adj() { return adjoints_; }
 };
 
 \end{minted}
@@ -1353,12 +1438,12 @@ struct var {
 \begin{frame}[fragile]{Source Code Transform Ex:}
 \begin{minted}[escapeinside=||]{C++}
 template <typename F, typename... Exprs>
-struct ad_expr {
+struct expr {
    var ret_;
    std::tuple<deduce_ownership_t<Exprs>...> exprs_;
    std::decay_t<F> f_;
    template <typename FF, typename... Args>
-   ad_expr(double x, FF&& f, Args&&... args) :
+   expr(double x, FF&& f, Args&&... args) :
      ret_(x), f_(std::forward<F>(f)),
      exprs_(std::forward<Args>(args)...) {}
    auto val() { return ret_.val();}
@@ -1385,6 +1470,31 @@ inline auto operator*(T1&& lhs, T2&& rhs) {
 \end{minted}
 \end{frame}
 
+\begin{frame}[fragile]{Source Code Transform Ex:}
+\begin{minted}{C++}
+template <typename Expr>
+inline void grad(Expr&& z) {
+  adjoint(z) = 1.0;
+  auto nodes = collect_bfs(z);
+  eval_breadthwise(nodes);
+}
+\end{minted}
+\end{frame}
+\begin{comment}
+  auto z = + (* x (log y)) (* (log (* x y)) y)
+\end{comment}
+\begin{frame}[fragile]{Source Code Transform Ex:}
+\begin{minted}[escapeinside=||]{C++}
+auto z = x |{\mathcolor{red}{*}}| |{\mathcolor{cyan}{log}}|(y) |{\mathcolor{yellow}{+}}| |{\mathcolor{orange}{log}}|(x |{\mathcolor{lime}{*}}| y) |{\mathcolor{magenta}{*}}| y;
+|{\mathcolor{yellow}{expr<Lambda<Plus>}}|, 
+  |{\mathcolor{red}{expr<Lambda<Mult>}}|, 
+   var, |{\mathcolor{cyan}{expr<Lambda<Log>}}|, var>>, 
+  |{\mathcolor{magenta}{expr<Lambda<Mult>}}|, 
+   |{\mathcolor{orange}{expr<Lambda<Log>}}|, 
+    |{\mathcolor{lime}{expr<Lambda<Mult>}}|, var, var>>, var>>
+\end{minted}
+\end{frame}
+
 \begin{frame}{Comparison}
 \begin{table}
   \centering % Centers the table on the page
@@ -1403,5 +1513,21 @@ inline auto operator*(T1&& lhs, T2&& rhs) {
   \end{tabular}
 \end{table}
 \end{frame}
+
+
+\begin{frame}{Thanks!}
+\begin{itemize}
+    \item Explain autodiff in layman's terms
+    \item Understand performance of high throughput memory intensive programs
+    \item Show how modern C++ has led to cleaner and more efficient AD
+\end{itemize}
+\begin{figure}
+\centerline{\includegraphics[scale=.05]{img/qr-code.png}}
+\caption{Code and Slides}
+\label{fig-red-bench}
+\end{figure}
+\end{frame}
+
+
 
 \end{document}

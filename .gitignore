@@ -3,3 +3,6 @@ slides/*
 !slides/slide.pdf
 .vscode/
 build/
+code/py/*
+!code/py/main.py
+!code/py/manim.cfg
