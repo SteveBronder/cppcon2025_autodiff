@@ -267,6 +267,13 @@ For models we want to estimate parameter values. Change the slide here so that w
     \end{itemize}
 \end{itemize}
 \end{frame}
+\note{
+Hamiltonian Monte Carlo: Updates the momentum $p$ using the (negative) gradient of the log posterior—i.e., the deterministic “force” driving the Hamiltonian dynamics.
+
+BFGS: Forms the search step $s_k$ as a quasi-Newton descent direction by preconditioning the gradient with the current inverse-Hessian estimate $H_k$.
+
+Stochastic Gradient Descent: Updates parameters by stepping $\theta$ a learning-rate $\eta$ in the direction opposite the stochastic gradient of the loss evaluated on $x_t$.
+}
 
 \begin{frame}{Why use Automatic Differentiation?}
 \begin{itemize}
@@ -391,8 +398,8 @@ u_g\sim\mathcal N(0,\sigma_u^2).
 
 \begin{frame}{Goal of this talk}
 \begin{itemize}
-    \item Explain autodiff in layman's terms
-    \item Understand performance of high throughput memory intensive programs
+    \item Explain how Reverse Mode Automatic Differentiation works
+    \item Performance of high throughput memory intensive programs
     \item Show how modern C++ has led to cleaner and more efficient AD
 \end{itemize}
 \end{frame}
@@ -403,14 +410,66 @@ u_g\sim\mathcal N(0,\sigma_u^2).
 \begin{frame}[fragile]{What is Automatic Differentiation?}
 \begin{itemize}
   \item AD computes gradients of a program by applying the chain rule to its subexpressions.
-  \item Given a function $f$ with inputs $x\in\mathbb{R}^n$ and outputs $z\in \mathbb{R}^m$ we want to "calculate the Jacobian $J\,$" with size $(m, n)$
+%  \item Given a function $f$ with inputs $x\in\mathbb{R}^n$ and outputs $z\in \mathbb{R}^m$ we want to "calculate the Jacobian $J\,$" with size $(m, n)$
 \end{itemize}
+\begin{align*}
+f\,(x, y) &= \log(x\cdot y)\\
+f_1(x, y) &= x \cdot y &\; \fracp{f_1}{x} &= y &\: \fracp{f_1}{y} = x\\[2pt]
+f_2(u) &= \log(u) &\; \fracp{f_2}{u} &= \frac{1}{u}&\\[2pt]
+f\,(x,y) &= f_2\!\big(f_1(x,y)\big) \\
+\end{align*}
+\pause
+\vspace{-13mm}
+\begin{align*}
+\fracp{f}{x}
+  &= \fracp{f_2}{f_1} \cdot \fracp{f_1}{x}
+   = \frac{1}{f_1(x, y)}\cdot y
+   = \frac{y}{x\cdot y}
+   = \frac{1}{x},\\[4pt]
+\fracp{f}{y}
+  &= \fracp{f_2}{f_1} \cdot \fracp{f_1}{y}
+   = \frac{1}{f_1(x, y)}\cdot x
+   = \frac{x}{x\cdot y}
+   = \frac{1}{y}.
+\end{align*}
 %Automatic Differentiation can do higher order partials, but here we just focus on the first order
 \end{frame}
 
 \note{Emphasize: AD is mechanical chain rule over the executed program, not symbolic math or numeric differencing.}
 
-\begin{frame}{Data Type: Expression Graph}
+\begin{frame}{Data Tye: Expression Graph}
+  Goal: Calculate the full gradient by accumulating partial gradients (adjoints) through the a graph of subexpressions.
+\vspace{-1mm}
+$$z = \log(x) \cdot y + \sin(x)$$
+
+\begin{tikzpicture}
+  [
+    Round/.style={circle, draw=black!, fill=green!0, thick, minimum size=2mm},
+    Red/.style={circle, draw=black!, fill=red!255, thick, minimum size=2mm},
+    Yellow/.style={circle, draw=black!, fill=yellow!255, thick, minimum size=10mm},
+    Gray/.style={circle, draw=black!, fill=gray!35, thick, minimum size=2mm}
+  ]
+  % Nodes
+  \node[Gray] (v1) at(-8, 0) {$y$};
+  \node[Gray] (v2) at(0, 0) {$x$};
+  \node[Round] (v3) at(-4, -2) {$\log$};
+  \node[Round] (v4) at(1, -2) {$\sin$};
+  \node[Round] (v5) at(-6, -4) {$\times$};
+  \node[Round] (v6) at(-3, -5.5) {$+$};
+
+  % Lines
+  \path [<-, draw, thick] (v5) -- (v1);
+  \path [<-, draw, thick] (v3) -- (v2);
+  \path [<-, draw, thick] (v4) -- (v2);
+  \path [<-, draw, thick] (v3) -- (v2);
+  \path [<-, draw, thick] (v6) -- (v4);
+  \path [<-, draw, thick] (v6) -- (v5);
+  \path [<-, draw, thick] (v5) -- (v3);
+
+\end{tikzpicture}
+\end{frame}
+
+\note{
 Goal: Calculate the full gradient by accumulating partial gradients (adjoints) through the a graph of subexpressions.
 
  \begin{itemize}
@@ -421,21 +480,21 @@ Goal: Calculate the full gradient by accumulating partial gradients (adjoints) t
      \item Reverse pass to calculate the local adjoint-Jacobian update of subexpressions
      \end{itemize}
  \end{itemize}
- \end{frame}
+}
 
 \begin{frame}{What is Automatic Differentiation}
  For Reverse Mode AD, each node performs two functions.
 \begin{itemize}
  \item Forward Pass:
  \begin{equation*}
-     u = f(x, y)
+     v_2 = f(v_0, v_1)
  \end{equation*}
- \item Reverse Pass: Given $u$'s adjoint (partial gradient) $\overline{u}$
- \\Calculate the local adjoint-Jacobian update for $x$ and $y$.
+ \pause
+ \item Reverse Pass: Given $v_2$'s adjoint (partial gradient) $\overline{v_2}$
+ \\Calculate the local adjoint-Jacobian update for $v_0$ and $v_1$.
  \begin{equation*}
- chain(\overline{u}, x, x_{1}) = \left\{\overline{x} \pluseq \diffp{u}{{x}}\overline{u},\overline{y} \pluseq \diffp{u}{{y}}\overline{u}\right\}
+ chain(\overline{v_2}, v_0, v_1) = \left\{\overline{v_0} \pluseq \diffp{v_2}{{v_0}}\overline{v_2},\overline{v_1} \pluseq \diffp{v_2}{{v_1}}\overline{v_2}\right\}
  \end{equation*}
- \item The calculations needed are represented as an expression Graph
 \end{itemize}
 \end{frame}
 
@@ -1383,7 +1442,7 @@ x.slice(1, 3) = x.head(3);
 
 \begin{table}
   \centering % Centers the table on the page
-  \label{tab:firsttable} % Label for referencing
+  \label{tab:aliasing} % Label for referencing
   \begin{tabular}{|l|r|c|} % Three columns: left, center, right, with vertical lines
     \hline % Top horizontal line
     Iter & X \\ % First row (headers)
@@ -1524,7 +1583,7 @@ auto z = x |{\mathcolor{red}{*}}| |{\mathcolor{cyan}{log}}|(y) |{\mathcolor{yell
 \begin{figure}
 \centerline{\includegraphics[scale=.05]{img/qr-code.png}}
 \caption{Code and Slides}
-\label{fig-red-bench}
+\label{fig-qr-code}
 \end{figure}
 \end{frame}
 
