@@ -17,8 +17,8 @@
 namespace ad {
 template <typename T>
 concept Arithmetic = std::is_arithmetic_v<std::decay_t<T>>;
-
-static std::pmr::monotonic_buffer_resource mbr{1<<16};
+static std::array<std::byte, 8192> buffer;
+static std::pmr::monotonic_buffer_resource mbr{buffer.data(), buffer.size()};
 using alloc_t = std::pmr::polymorphic_allocator<std::byte>;
 static alloc_t pa{&mbr};
 

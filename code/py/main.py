@@ -93,7 +93,7 @@ class NewtonSceneSettings:
     # Timing controls for each animation step (all multiplied by t_scale).
     t_scale: float = 2.5
     # How long to draw the dashed guide lines (horizontal + vertical through the point).
-    t_guides: float = 0.14 
+    t_guides: float = 0.14
     # How long to show the general Newton formula when it first appears.
     t_eq_general: float = 0.70 * t_scale
     # Duration for each partial substitution transform (x_n, f(x_n), f'(x_n)).

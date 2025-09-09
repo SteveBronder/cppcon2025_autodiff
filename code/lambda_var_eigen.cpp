@@ -78,12 +78,17 @@ static void lambda_var_eigen(benchmark::State& state) {
 
   using mat_d = Eigen::Matrix<double, -1, -1>;
   using v_mat = ad::var_impl<mat_d>;
+  const auto N = state.range(0);
+  auto X1_d = mat_d::Random(N, N);
+  auto X2_d = mat_d::Random(N, N);
   for (auto _ : state) {
-    v_mat X1(mat_d::Random(4, 4).eval());
-    v_mat X2(mat_d::Random(4, 4).eval());
+    v_mat X1(X1_d);
+    v_mat X2(X2_d);
     ad::var ret = ad::sum(ad::multiply(X1, X2));
     ad::grad(ret);
+    benchmark::DoNotOptimize(ret);
     ad::clear_mem();
   }
 }
-BENCHMARK(lambda_var_eigen);
+BENCHMARK(lambda_var_eigen)-> RangeMultiplier(2) -> Range(1, 4096);
+

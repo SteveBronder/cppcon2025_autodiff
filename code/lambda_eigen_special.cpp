@@ -60,12 +60,17 @@ inline auto sum(T&& x) {
 static void lambda_eigen_special_bench(benchmark::State& state) {
 
   using matv = Eigen::Matrix<ad::var, -1, -1>;
+  using matd = Eigen::Matrix<double, -1, -1>;
+  const auto N = state.range(0);
+  const auto X1_d = matd::Random(N, N);
+  const auto X2_d = matd::Random(N, N);
   for (auto _ : state) {
-    ad::arena_matrix<matv> X1 = matv::Random(4, 4);
-    ad::arena_matrix<matv> X2 = matv::Random(4, 4);
+    ad::arena_matrix<matv> X1(X1_d);
+    ad::arena_matrix<matv> X2(X2_d);
     ad::var ret = (X1 * X2).sum();
     ad::grad(ret);
+    benchmark::DoNotOptimize(ret);
     ad::clear_mem();
   }
 }
-BENCHMARK(lambda_eigen_special_bench);
+BENCHMARK(lambda_eigen_special_bench)-> RangeMultiplier(2) -> Range(1, 4096);

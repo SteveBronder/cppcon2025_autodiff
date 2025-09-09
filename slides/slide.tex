@@ -647,7 +647,7 @@ $$z = \log(\mathcolor{red}{x\cdot y})$$
   % Lines
   \path [<-, draw, thick] (v2) -- (v0);
   \path [<-, draw, thick] (v2) -- (v1);
-  \path [->, draw, thick] (v3) -- (v2);
+  \path [->, draw=red, thick] (v3) -- (v2);
 \end{tikzpicture}
 \end{frame}
 
@@ -670,8 +670,8 @@ $$z = \log(x\cdot \mathcolor{red}{y})$$
   \node[Round, label=left:{\textcolor{blue}{$v_3 = \log{v_2}$}},
     label=right:{\textcolor{red}{$\adj{v_3}=\pp{v_3}{v_3}=1$}}] (v3) at(-4, -4) {$\mathcolor{red}{\log}$};
   % Lines
-  \path [->, draw, thick] (v2) -- (v0);
-  \path [<-, draw, thick] (v2) -- (v1);
+  \path [<-, draw, thick] (v2) -- (v0);
+  \path [->, draw=red, thick] (v2) -- (v1);
   \path [->, draw, thick] (v3) -- (v2);
 \end{tikzpicture}
 \end{frame}
@@ -696,7 +696,7 @@ $$z = \log(\mathcolor{red}{x}\cdot y)$$
   \node[Round, label=left:{\textcolor{blue}{$v_3 = \log{v_2}$}},
     label=right:{\textcolor{red}{$\adj{v_3}=\pp{v_3}{v_3}=1$}}] (v3) at(-4, -4) {$\mathcolor{red}{\log}$};
   % Lines
-  \path [->, draw, thick] (v2) -- (v0);
+  \path [->, draw=red, thick] (v2) -- (v0);
   \path [->, draw, thick] (v2) -- (v1);
   \path [->, draw, thick] (v3) -- (v2);
 \end{tikzpicture}
@@ -966,7 +966,7 @@ operator*(var x, var y) {
 }
 \end{minted}
 \end{frame}
-\note{The virtual function in vari is a performance trick}
+\note{The virtual function in var_impl is a performance trick}
 \begin{frame}[fragile]{Operator Overloading: Simple}
 \begin{minted}{C++}
 void grad(var& v) {
@@ -1064,17 +1064,17 @@ grad(z);
 \begin{comment}
 \begin{frame}[fragile]{Operator Overloading Approach: Adolc}
 \begin{minted}{C++}
-struct vari {
+struct var_impl {
   double val;
   double adj;
 }; // 12 bytes
 struct var {
-  vari* vi_;
+  var_impl* vi_;
 }; // 8 bytes
 struct ad_tape {
   struct expr_info {
-    vari** out_;
-    vari** in_;
+    var_impl** out_;
+    var_impl** in_;
     op_code chain_op;
   };
   std::vector<expr_info> tape_;
@@ -1115,33 +1115,46 @@ void calc_grad(Tape& tape) {
 
 \begin{frame}[fragile]{Monotonic Buffer}
 \begin{minted}{C++}
-static monotonic_buffer_resource mbr{1<<16};
-static polymorphic_allocator<std::byte> pa{&mbr};
-static std::vector<vari*> tape;
-template <typename T>
-auto& new_vari(double x) {
-  return *tape.emplace_back(pa.new_object<T>(x, 0.0));
-}
-struct vari {
+struct Tape {
+  monotonic_buffer_resource mbr{1<<16};
+  polymorphic_allocator<std::byte> pa{&mbr};
+  std::vector<var_impl*> tape;
+  void clear() {
+    tape.clear();
+    mbr.release();
+  }
+  template <typename T, typename Types>
+  auto* add(Types&&... args) {
+    return g_ad.tape.emplace_back(
+      g_ad.pa.new_object<T>(args...));
+  }
+};
+static Tape g_ad{};
+\end{minted}
+\end{frame}
+
+\begin{frame}[fragile]{Monotonic Buffer}
+\begin{minted}{C++}
+struct var_impl {
   double val;
   double adj;
   virtual void chain() {};
 }; // 24 bytes
 struct var {
-  vari* vi_;
+  var_impl* vi_;
   var(double val) :
-  vi_(new_vari<vari>(val)) {}
+    vi_(g_ad.template add<var_impl>(val)) {}
 }; // 8 bytes
 \end{minted}
 \begin{comment}
 \centering
 \begin{CacheLine}
   % Color some blocks
-  \CacheMarkBelow{0}{vari\{dbl, dbl, vptr\}}
+  \CacheMarkBelow{0}{var_impl\{dbl, dbl, vptr\}}
   \CacheColor{0}{green!60}
   \CacheColor{1}{green!60}
   \CacheColor{2}{green!60}
-  \CacheMarkBelow{3}{vari\{dbl, dbl, vptr\}}
+  \CacheMarkBelow{3}{var_impl\{dbl, dbl, vptr\}}
   \CacheColor{3}{green!60}
   \CacheColor{4}{green!60}
   \CacheColor{5}{green!60}
@@ -1153,8 +1166,8 @@ struct var {
 \begin{comment}
 \begin{frame}[fragile]{Monotonic Buffer}
 \begin{minted}{C++}
-struct LogVari : vari {
-  vari* in_;
+struct LogVari : var_impl {
+  var_impl* in_;
   LogVari(var x) : in_(std::log(x.vi_->val)) {}
   virtual void chain() override {
     in_->adj += adj / in_->val;
@@ -1167,7 +1180,7 @@ inline var log(var x) {
 \centering
 \begin{CacheLine}
   % Color some blocks
-  \CacheMarkBelow{0}{LogVari\{dbl, dbl, vptr, vari*\}}
+  \CacheMarkBelow{0}{LogVari\{dbl, dbl, vptr, var_impl*\}}
   \CacheColor{0}{green!60}
   \CacheColor{1}{green!60}
   \CacheColor{2}{green!60}
@@ -1182,18 +1195,23 @@ inline var log(var x) {
 \begin{frame}[fragile]{Monotonic Buffer}
 \begin{minted}{C++}
 struct mul_vv : public var_impl {
-  vari* op1_;
-  vari* op2_;
+  var op1_;
+  var op2_;
   void chain() {
     op1_->adjoint_ += this->adjoint_ * op2_->value_;
     op2_->adjoint_ += this->adjoint_ * op1_->value_;
   }
 }; // 40 bytes
+operator*(var op1, var op2) {
+  return var{g_ad.template add<mul_vv>(
+    op1.val() * op2.val(), op1, op2)};
+}
 \end{minted}
+\begin{comment}
 \centering
 \begin{CacheLine}
   % Color some blocks
-  \CacheMarkBelow{0}{mul\_vv\{dbl, dbl, vptr, vari*, vari*\}}
+  \CacheMarkBelow{0}{mul\_vv\{dbl, dbl, vptr, var\_impl*, var\_impl*\}}
   \CacheColor{0}{green!60}
   \CacheColor{1}{green!60}
   \CacheColor{2}{green!60}
@@ -1203,23 +1221,27 @@ struct mul_vv : public var_impl {
   \CacheColor{6}{red!60}
   \CacheColor{7}{red!60}
 \end{CacheLine}
+\end{comment}
 \end{frame}
 
 \begin{frame}[fragile]{Monotonic Buffer}
 \begin{minted}[escapeinside=||]{C++}
-void grad(var z) {
-  z.adj() = 1;
-  for (auto& x : tape | std::views::reverse) {
-    x->chain();
+void compute_grads(var x, var y) {
+  var z = -10;
+  while (z.val() < 20) {
+    z += log(x * y);
   }
+  grad(z);
 }
-var x = 1;
-var y = 2;
-var z = log(x * y);
-grad(z);
-// Do what we want with x and y adjoints then clear
-tape.clear();
-mbr.release();
+// Later in program
+for (int i = 0; i < 1e10; ++i) {
+  var x = compute_x(...);
+  var y = compute_y(...);
+  compute_grads(x, y);
+  do_something_with_grads(x.adj(), y.adj());
+  tape.clear();
+  mbr.release();
+}
 \end{minted}
 \end{frame}
 
@@ -1244,20 +1266,21 @@ struct divide_vd;
 \begin{frame}[fragile]{Reduce Boilerplate}
 \begin{minted}[escapeinside=||]{C++}
 template <typename F>
-struct callback_vari : public vari {
+struct callback_var_impl : public var_impl {
   F rev_functor_;
   template <std::floating_point S>
-  explicit callback_vari(S&& value, F&& rev_functor)
-    : vari(value),
+  explicit callback_var_impl(S&& value,
+    F&& rev_functor)
+    : var_impl(value),
       rev_functor_(rev_functor) {}
   void chain() final { rev_functor_(*this); }
 }; // 24 + 8B * N
-// Helper for callback_vari
-template <std::floating_point T, typename F>
-auto lambda_var(T val, F&& rev_functor) {
+// Helper for callback_var_impl
+template <std::floating_point FwdVal, typename F>
+auto lambda_var(FwdVal val, F&& rev_functor) {
   return var(
-    new_vari<callback_vari<F>>(
-      std::forward<T>(val),
+    new_var_impl<callback_var_impl<F>>(
+      val,
       std::forward<F>(rev_functor)));
 }
 \end{minted}
@@ -1281,34 +1304,34 @@ inline auto operator*(T1 op1, T2 op2) {
 \end{minted}
 \end{frame}
 
-\begin{frame}[fragile]{Source Code Transform}
-\begin{minted}{C++}
-  blah
-\end{minted}
-\end{frame}
-
-\begin{frame}[fragile]{Operator Overloading Approach: Matrices}
-\begin{minted}{C++}
-struct Matrix<var> {
-  var* data_;
-};
-Matrix<var> B(M, M);
-Matrix<var> X(M, M);
-Matrix<var> Z = X * B.transpose();
-\end{minted}
-\begin{itemize}
-    \item Array of Structs:
-    \begin{itemize}
-        \item Simple, most algorithms Just Work\texttrademark
-        \item Adds a lot to expression graph
-        \item turns off SIMD
-    \end{itemize}
-\end{itemize}
-\pause
-\centering
+\begin{frame}{Poor Cache Use}
 \begin{CacheLine}
   % Color some blocks
-  \CacheMarkBelow{0}{mul\_vv\{dbl, dbl, vptr, vari*, vari*\}}
+  \CacheMarkBelow{0}{var\_base\{dbl, dbl, vptr\}}
+  \CacheColor{0}{green!60}
+  \CacheColor{1}{green!60}
+  \CacheColor{2}{green!60}
+  \CacheColor{3}{red!60}
+  \CacheColor{4}{red!60}
+  \CacheColor{5}{red!60}
+  \CacheColor{6}{red!60}
+  \CacheColor{7}{red!60}
+\end{CacheLine}
+\begin{CacheLine}
+  % Color some blocks
+  \CacheMarkBelow{0}{unary\_var\{dbl, dbl, vptr, var\_impl*\}}
+  \CacheColor{0}{green!60}
+  \CacheColor{1}{green!60}
+  \CacheColor{2}{green!60}
+  \CacheColor{3}{green!60}
+  \CacheColor{4}{red!60}
+  \CacheColor{5}{red!60}
+  \CacheColor{6}{red!60}
+  \CacheColor{7}{red!60}
+\end{CacheLine}
+\begin{CacheLine}
+  % Color some blocks
+  \CacheMarkBelow{0}{binary\_var\{dbl, dbl, vptr, var\_impl*, var\_impl*\}}
   \CacheColor{0}{green!60}
   \CacheColor{1}{green!60}
   \CacheColor{2}{green!60}
@@ -1320,25 +1343,192 @@ Matrix<var> Z = X * B.transpose();
 \end{CacheLine}
 \end{frame}
 
+\begin{frame}[fragile]{Source Code Transform Ex:}
+\begin{minted}[escapeinside=||]{C++}
+double z = log(x * y);
+\end{minted}
+Break it down
+\begin{minted}[escapeinside=||]{C++}
+double v0 = x;
+double v1 = y;
+double v2 = x * y;
+double v3 = log(v2)
+double bar_v3 = 1;
+double bar_v2 = bar_v3 * 1/v2;
+double bar_v1 = bar_v2 * v0;
+double bar_v0 = bar_v2 * v1;
+\end{minted}
+\end{frame}
+
+\begin{frame}[fragile]{Source Code Transform Ex:}
+Code like the following very hard / impossible in source code transform
+\begin{minted}[escapeinside=||]{C++}
+while(error < tolerance) {
+  // ...
+}
+\end{minted}
+\end{frame}
+
+\begin{frame}[fragile]{Source Code Transform Ex:}
+\begin{minted}[escapeinside=||]{C++}
+struct var {
+    double values_;
+    double adjoints_;
+    var(double x) : values_(x), adjoints_(0) {}
+};
+
+\end{minted}
+\end{frame}
+
+\begin{frame}[fragile]{Source Code Transform Ex:}
+\begin{minted}[escapeinside=||]{C++}
+template <typename F, typename... Exprs>
+struct expr {
+   var ret_;
+   std::tuple<deduce_ownership_t<Exprs>...> exprs_;
+   std::decay_t<F> f_;
+   template <typename FF, typename... Args>
+   expr(double x, FF&& f, Args&&... args) :
+     ret_(x), f_(std::forward<F>(f)),
+     exprs_(std::forward<Args>(args)...) {}
+};
+\end{minted}
+\end{frame}
+
+\begin{frame}[fragile]{Source Code Transform Ex:}
+\begin{minted}[escapeinside=||]{C++}
+template <typename T1, typename T2>
+requires any_var_or_expr<T1, T2>
+inline auto operator*(T1&& lhs, T2&& rhs) {
+  return make_expr(value(lhs) * value(rhs),
+  [](auto&& ret, auto&& lhs, auto&& rhs) {
+    if constexpr (!std::is_arithmetic_v<T1>) {
+      adjoint(lhs) += adjoint(ret) * value(rhs);
+    }
+    if constexpr (!std::is_arithmetic_v<T2>) {
+      adjoint(rhs) += adjoint(ret) * value(lhs);
+    }
+  }, std::forward<T1>(lhs), std::forward<T2>(rhs));
+}
+\end{minted}
+\end{frame}
+
+\begin{frame}[fragile]{Source Code Transform Ex:}
+\begin{minted}{C++}
+template <typename Expr>
+inline void grad(Expr&& z) {
+  adjoint(z) = 1.0;
+  auto nodes = collect_bfs(z);
+  eval_breadthwise(nodes);
+}
+\end{minted}
+\end{frame}
+\begin{comment}
+  auto z = + (* x (log y)) (* (log (* x y)) y)
+\end{comment}
+\begin{frame}[fragile]{Source Code Transform Ex:}
+\begin{minted}[escapeinside=||]{C++}
+auto z = x |{\mathcolor{red}{*}}| |{\mathcolor{cyan}{log}}|(y) |{\mathcolor{yellow}{+}}| |{\mathcolor{orange}{log}}|(x |{\mathcolor{lime}{*}}| y) |{\mathcolor{magenta}{*}}| y;
+|{\mathcolor{yellow}{expr<Lambda<Plus>}}|,
+  |{\mathcolor{red}{expr<Lambda<Mult>}}|, var, |{\mathcolor{cyan}{expr<Lambda<Log>}}|, var>>,
+  |{\mathcolor{magenta}{expr<Lambda<Mult>}}|,
+   |{\mathcolor{orange}{expr<Lambda<Log>}}|, |{\mathcolor{lime}{expr<Lambda<Mult>}}|, var, var>>,
+   var>>
+\end{minted}
+\end{frame}
+
+\begin{frame}{Comparison}
+\begin{table}
+  \centering % Centers the table on the page
+  \caption{$f(x, y) = x\log(y) + \log(xy) y$;} % Table caption
+  \label{tab:firsttable} % Label for referencing
+  \begin{tabular}{|l|r|c|} % Three columns: left, center, right, with vertical lines
+    \hline % Top horizontal line
+    Method & CPU Time & \% Improvement \\ % First row (headers)
+    \hline % Line after headers
+    Shared Ptr & 508ns & 1.0 \\
+    MonoBuff   & 121ns & 3.9x \\
+    Lambda     & 112ns & 4.2x \\
+    Source Code Transform        &  26.5ns & 19x \\
+    Baseline & 2.82ns & 180x\\
+    \hline % Bottom horizontal line
+  \end{tabular}
+\end{table}
+\end{frame}
+
 \begin{frame}[fragile]{Operator Overloading Approach: Matrices}
 \begin{minted}{C++}
-struct vari<Matrix<double>> {
-  double* value_;
-  double* adjoint_;
+Matrix<var> B(M, M);
+Matrix<var> X(M, M);
+Matrix<var> Z = X * B.transpose();
+\end{minted}
+\end{frame}
+
+\begin{frame}[fragile]{Operator Overloading Approach: Matrices}
+\begin{minted}{C++}
+template <typename MatrixType>
+struct arena_matrix :
+  public Eigen::Map<MatrixType> {
+  using Base = Eigen::Map<MatrixType>
+  template <typename T>
+  arena_matrix(T&& mat) :
+   Base(copy_to_arena(mat.data(), mat.size()),
+     mat.rows(), mat.cols()) {}
+};
+\end{minted}
+\end{frame}
+
+
+\begin{frame}[fragile]{Operator Overloading Approach: Matrices}
+\begin{minted}{C++}
+// Array of Structs
+struct Matrix<var> {
+  var* data_;
+};
+// Struct of Arrays
+struct var_impl<Matrix<double>> {
+  arena_matrix<double> value_;
+  arena_matrix<double> adjoint_;
   virtual void chain() {}
 };
-var<Matrix<double>> B(M, M);
-var<Matrix<double>> X(M, M);
-var<Matrix<double>> Z = X * B.transpose();
 \end{minted}
+\vspace{-8mm}
+\end{frame}
+\begin{frame}[fragile]{Operator Overloading Approach: Matrices}
 \begin{itemize}
-    \item Struct of Arrays:
+    \item Array of Structs \mintinline{latex}{Matrix<var>}:
+    \begin{itemize}
+        \item Simple, most algorithms Just Work\texttrademark
+        \item Adds a lot to expression graph
+        \item turns off SIMD
+    \end{itemize}
+\end{itemize}
+\pause
+\begin{itemize}
+    \item Struct of Arrays \mintinline{latex}{var<Matrix>}:
     \begin{itemize}
         \item Hard, everything written out manually
         \item Collapses matrix expressions in tree
         \item SIMD can be used on values and adjoints
     \end{itemize}
 \end{itemize}
+\end{frame}
+
+
+\begin{frame}[fragile]{Operator Overloading Approach: Matrices}
+\begin{CacheLine}
+  % Color some blocks
+  \CacheMarkBelow{0}{var\_impl<Matrix>\{dbl*, dbl*, vptr\}}
+  \CacheColor{0}{green!60}
+  \CacheColor{1}{green!60}
+  \CacheColor{2}{green!60}
+  \CacheMarkAbove{3}{var\_impl<Matrix>\{dbl*, dbl*, vptr\}}
+  \CacheColor{3}{green!60}
+  \CacheColor{4}{green!60}
+  \CacheColor{5}{green!60}
+  \CacheColor{6}{red!60}
+  \CacheColor{7}{red!60}
+\end{CacheLine}
 \end{frame}
 
 \begin{frame}[fragile]{Matrix Multiplication Example}
@@ -1363,7 +1553,7 @@ inline auto operator*(T1&& op1, T2&& op2) {
 \centering
 \begin{CacheLine}
   % Color some blocks
-  \CacheMarkBelow{0}{mat\_mul\_vv\{dbl*, dbl*, vptr, lambda[vari<Matrix>*, vari<Matrix>*]\}}
+  \CacheMarkBelow{0}{mat\_mul\_vv\{dbl*, dbl*, vptr, lambda[var\_impl<Matrix>*, var\_impl<Matrix>*]\}}
   \CacheColor{0}{green!60}
   \CacheColor{1}{green!60}
   \CacheColor{2}{green!60}
@@ -1375,17 +1565,26 @@ inline auto operator*(T1&& op1, T2&& op2) {
 \end{CacheLine}
 \end{frame}
 
-\begin{frame}{Operator Overloading Approach: Matrices}
-TODO: Benchmark
+\begin{frame}{Matrix Multiplication Benchmark}
+\begin{figure}
+\centerline{\includegraphics[scale=.5]{img/matmul_bench.png}}
+\label{fig-matmul}
+\end{figure}
 \end{frame}
 
+\begin{frame}[fragile]{Scaling Up: CPU}
+\end{frame}
+
+
+\note{We have a ton of static globals, how are supposed to run this stuff in parallel? thread_local duh!}
+\begin{comment}
 \begin{frame}[fragile]{Subset Assignment}
 \vspace{-1mm}
 \begin{minted}{C++}
-var<Vector<double>> y{{0, 1, 2, 3}}; 
-var<Vector<double>> x{{0, 1, 2, 3}}; 
+var<Vector<double>> y{{0, 1, 2, 3}};
+var<Vector<double>> x{{0, 1, 2, 3}};
 var prod = y.dot(x);
-x.slice(1, 3) = x.head(3); 
+x.slice(1, 3) = x.head(3);
 auto z = prod + sum(x);
 \end{minted}
 \pause
@@ -1434,10 +1633,64 @@ auto z = prod + sum(x);
 \end{frame}
 
 
+\begin{frame}[fragile]{Subset Assignment}
+\vspace{-1mm}
+\begin{minted}{C++}
+var<Vector<double>> y{{0, 1, 2, 3}};
+var<Vector<double>> x{{0, 1, 2, 3}};
+var prod = y.dot(x);
+x.slice(1, 3) = x.head(3);
+auto z = prod + sum(x);
+\end{minted}
+\begin{tikzpicture}
+  [
+    Round/.style={circle, draw=black!, fill=green!0, thick, minimum size=2mm},
+    Red/.style={circle, draw=black!, fill=red!255, thick, minimum size=2mm},
+    Yellow/.style={circle, draw=black!, fill=yellow!255, thick, minimum size=10mm},
+    Gray/.style={circle, draw=black!, fill=gray!35, thick, minimum size=2mm}
+  ]
+  % Nodes (x, y)
+  \node[Gray] (v0) at(0, 0) {\texttt{X}};
+  \node[Gray] (v1) at(1.42, 0) {\texttt{Y}};
+  \tiny
+  \node[Gray] (v2) at(4.28, 0) {\texttt{head}};
+  \node[Gray] (v3) at(5.71,  0) {\texttt{slice}};
+  \normalsize
+  \node[Round] (v4) at(7.14, 0) {\texttt{=}};
+  \small
+  \node[Red] (v5) at(2.85, 0) {\texttt{dot}};
+  \node[Red] (v6) at(8.57, 0) {\texttt{sum}};
+  \normalsize
+  \node[Gray] (v7) at(10, 0) {\texttt{+}};
+
+  % Lines
+  % X.head()
+  \path [<-, draw, thick] (v2) to[out=140,in=40] (v0);
+  % X.slice()
+  \path [<-, draw, thick] (v3) to[out=-140,in=-30] (v0);
+  % = x.head()
+  \path [<-, draw, thick] (v4) to[out=140,in=20] (v2);
+  % x.slice() =
+  \path [<-, draw, thick] (v4) to[out=-140,in=-30] (v3);
+  % dot(x, _)
+  \path [<-, draw, thick] (v5) to[out=140,in=30] (v0);
+  % dot(_, y)
+  \path [<-, draw, thick] (v5) to[out=-140,in=-30] (v1);
+  % = -> sum(x)
+  \path [<-, draw, thick] (v6) to[out=140,in=30] (v4);
+  % sum(x) + _
+  \path [<-, draw, thick] (v7) to[out=-140,in=-30] (v5);
+  % _ + dot
+  \path [<-, draw, thick] (v7) to[out=140,in=30] (v6);
+
+\end{tikzpicture}
+\end{frame}
+
+
 \begin{frame}[fragile]{Subset Assignment Becomes Very Hard}
 \begin{minted}{C++}
-var<Vector<double>> x{{0, 1, 2, 3}}; 
-x.slice(1, 3) = x.head(3); 
+var<Vector<double>> x{{0, 1, 2, 3}};
+x.slice(1, 3) = x.head(3);
 \end{minted}
 
 \begin{table}
@@ -1455,137 +1708,43 @@ x.slice(1, 3) = x.head(3);
 \end{table}
 \end{frame}
 
-\begin{frame}[fragile]{Source Code Transform Ex:}
-\begin{minted}[escapeinside=||]{C++}
-double z = log(x * y);
-\end{minted}
-Break it down
-\begin{minted}[escapeinside=||]{C++}
-double v0 = x;
-double v1 = y;
-double v2 = x * y;
-double v3 = log(v2)
-double bar_v3 = 1;
-double bar_v2 = bar_v3 * 1/v2;
-double bar_v1 = bar_v2 * v0;
-double bar_v0 = bar_v2 * v1;
-\end{minted}
-\end{frame}
-
-\begin{frame}[fragile]{Source Code Transform Ex:}
-Code like the following very hard / impossible in source code transform
-\begin{minted}[escapeinside=||]{C++}
-while(error < tolerance) {
-  // ...
-}
-\end{minted}
-\end{frame}
-
-\begin{frame}[fragile]{Source Code Transform Ex:}
-\begin{minted}[escapeinside=||]{C++}
-struct var {
-    double values_;
-    double adjoints_;
-    var(double x) : values_(x), adjoints_(0) {}
-    auto val() const { return values_; }
-    auto& adj() { return adjoints_; }
-};
-
-\end{minted}
-\end{frame}
-
-\begin{frame}[fragile]{Source Code Transform Ex:}
-\begin{minted}[escapeinside=||]{C++}
-template <typename F, typename... Exprs>
-struct expr {
-   var ret_;
-   std::tuple<deduce_ownership_t<Exprs>...> exprs_;
-   std::decay_t<F> f_;
-   template <typename FF, typename... Args>
-   expr(double x, FF&& f, Args&&... args) :
-     ret_(x), f_(std::forward<F>(f)),
-     exprs_(std::forward<Args>(args)...) {}
-   auto val() { return ret_.val();}
-   auto& adj() { return ret_.adj();}
-};
-\end{minted}
-\end{frame}
-
-\begin{frame}[fragile]{Source Code Transform Ex:}
-\begin{minted}[escapeinside=||]{C++}
-template <typename T1, typename T2>
-requires any_var_or_expr<T1, T2>
-inline auto operator*(T1&& lhs, T2&& rhs) {
-  return make_expr(value(lhs) * value(rhs),
-  [](auto&& ret, auto&& lhs, auto&& rhs) {
-    if constexpr (!std::is_arithmetic_v<T1>) {
-      adjoint(lhs) += adjoint(ret) * value(rhs);
-    }
-    if constexpr (!std::is_arithmetic_v<T2>) {
-      adjoint(rhs) += adjoint(ret) * value(lhs);
-    }
-  }, std::forward<T1>(lhs), std::forward<T2>(rhs));
-}
-\end{minted}
-\end{frame}
-
-\begin{frame}[fragile]{Source Code Transform Ex:}
-\begin{minted}{C++}
-template <typename Expr>
-inline void grad(Expr&& z) {
-  adjoint(z) = 1.0;
-  auto nodes = collect_bfs(z);
-  eval_breadthwise(nodes);
-}
-\end{minted}
-\end{frame}
-\begin{comment}
-  auto z = + (* x (log y)) (* (log (* x y)) y)
-\end{comment}
-\begin{frame}[fragile]{Source Code Transform Ex:}
-\begin{minted}[escapeinside=||]{C++}
-auto z = x |{\mathcolor{red}{*}}| |{\mathcolor{cyan}{log}}|(y) |{\mathcolor{yellow}{+}}| |{\mathcolor{orange}{log}}|(x |{\mathcolor{lime}{*}}| y) |{\mathcolor{magenta}{*}}| y;
-|{\mathcolor{yellow}{expr<Lambda<Plus>}}|, 
-  |{\mathcolor{red}{expr<Lambda<Mult>}}|, 
-   var, |{\mathcolor{cyan}{expr<Lambda<Log>}}|, var>>, 
-  |{\mathcolor{magenta}{expr<Lambda<Mult>}}|, 
-   |{\mathcolor{orange}{expr<Lambda<Log>}}|, 
-    |{\mathcolor{lime}{expr<Lambda<Mult>}}|, var, var>>, var>>
-\end{minted}
-\end{frame}
-
-\begin{frame}{Comparison}
-\begin{table}
-  \centering % Centers the table on the page
-  \caption{$f(x, y) = x\log(y) + \log(xy) y$;} % Table caption
-  \label{tab:firsttable} % Label for referencing
-  \begin{tabular}{|l|r|c|} % Three columns: left, center, right, with vertical lines
-    \hline % Top horizontal line
-    Method & CPU Time & \% Improvement \\ % First row (headers)
-    \hline % Line after headers
-    Shared Ptr & 508ns & 1.0 \\
-    MonoBuff   & 121ns & 3.9x \\
-    Lambda     & 112ns & 4.2x \\
-    Source Code Transform        &  26.5ns & 19x \\
-    Baseline & 0.282ns & A Lotx\\
-    \hline % Bottom horizontal line
-  \end{tabular}
-\end{table}
-\end{frame}
-
-
 \begin{frame}{Thanks!}
-\begin{itemize}
-    \item Explain autodiff in layman's terms
-    \item Understand performance of high throughput memory intensive programs
-    \item Show how modern C++ has led to cleaner and more efficient AD
-\end{itemize}
+Repository for benchmarks and slides
 \begin{figure}
-\centerline{\includegraphics[scale=.05]{img/qr-code.png}}
-\caption{Code and Slides}
+\centerline{\includegraphics[scale=.5]{img/qr-code.png}}
 \label{fig-qr-code}
 \end{figure}
 \end{frame}
+
+
+\begin{frame}[fragile]{Subset Assignment Becomes Very Hard}
+\begin{minted}{C++}
+tempalte <typename T>
+struct var {
+  template <typename S>
+  require AssignableExpression<T, S>
+  inline var_value<T>& operator=(const var_value<S>& other) {
+    arena_t<plain_type_t<T>> prev_val(vi_->val_.rows(), vi_->val_.cols());
+    prev_val.deep_copy(vi_->val_);
+    vi_->val_.deep_copy(other.val());
+    reverse_pass_callback(
+        [this_vi = this->vi_, other_vi = other.vi_, prev_val]() mutable {
+          this_vi->val_.deep_copy(prev_val);
+
+          // we have no way of detecting aliasing between this->vi_->adj_ and
+          // other.vi_->adj_, so we must copy adjoint before reseting to zero
+
+          // we can reuse prev_val instead of allocating a new matrix
+          prev_val.deep_copy(this_vi->adj_);
+          this_vi->adj_.setZero();
+          other_vi->adj_ += prev_val;
+        });
+    return *this;
+  }
+}
+\end{minted}
+\end{frame}
+\end{comment}
 
 
 

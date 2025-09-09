@@ -6,3 +6,4 @@ build/
 code/py/*
 !code/py/main.py
 !code/py/manim.cfg
+.venv/
