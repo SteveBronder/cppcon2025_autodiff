@@ -390,9 +390,9 @@ u_g\sim\mathcal N(0,\sigma_u^2).
 
 \begin{frame}{Implementation Matters!}
 \begin{figure}
-\centerline{\includegraphics[scale=.5]{img/combined_regression_plot.png}}
+\centerline{\includegraphics[scale=.5]{img/mac_regression_plot.png}}
 \caption{Benchmark for $f\,'$ given $f(y) = N(y | X\theta,\sigma)$}
-\label{fig-red-bench}
+\label{fig-mac-red-bench}
 \end{figure}
 \end{frame}
 
@@ -757,7 +757,7 @@ $$z = \log(x\cdot y)$$
             \item[Bad:] Hard to implement, very restrictive
         \end{itemize}
     \end{itemize}
-  \pause
+
     \item Operator Overloading
     \begin{itemize}
         \item Nodes in the expression graph are objects which store a forward and reverse pass function
@@ -1565,18 +1565,82 @@ inline auto operator*(T1&& op1, T2&& op2) {
 \end{CacheLine}
 \end{frame}
 
+
 \begin{frame}{Matrix Multiplication Benchmark}
 \begin{figure}
 \centerline{\includegraphics[scale=.5]{img/matmul_bench.png}}
 \label{fig-matmul}
 \end{figure}
 \end{frame}
-
 \begin{frame}[fragile]{Scaling Up: CPU}
+  \begin{itemize}
+    \item Within a node, parallelism is easy
+    \pause
+    \item Parallel + static globals????
+    \pause
+    \item Yes, \pause sometimes
+  \end{itemize}
 \end{frame}
 
+\note{
+We have a ton of static globals, how are supposed to run this stuff in parallel? thread_local duh!
+Going to hand wave away observer model for now
+}
 
-\note{We have a ton of static globals, how are supposed to run this stuff in parallel? thread_local duh!}
+\begin{frame}{Embarassingly Parallel Not Possible}
+  But reduce sum style very easy
+\end{frame}
+
+\begin{comment}
+\begin{frame}[fragile]{Scaling Up: CPU}
+\begin{minted}{C++}
+struct ad_tape {
+  struct ad_tape_instance {
+    monotonic_buffer_resource mbr{1<<16};
+    polymorphic_allocator<std::byte> pa{&mbr};
+    std::vector<var_impl*> tape;
+    void clear();
+  };
+  static thread_local ad_tape_instance* instance_;
+  static void init();
+};
+thread_local ad_tape_instance* ad_tape::instance_;
+\end{minted}
+\end{frame}
+
+\begin{frame}[fragile]{Scaling Up: CPU}
+\begin{minted}{C++}
+struct ad_tape_obs final : tbb::task_scheduler_observer {
+  using tape_ptr = std::unique_ptr<ad_tape>;
+  std::unordered_map<std::thread::id, tape_ptr> by_thread_;
+  std::mutex m_;
+  void on_scheduler_entry(bool /*worker*/);
+  void on_scheduler_exit(bool /*worker*/);
+};
+\end{minted}
+\end{frame}
+
+\begin{frame}[fragile]{Scaling Up: CPU}
+\begin{minted}{C++}
+void on_scheduler_entry(bool /*worker*/) override {
+  std::scoped_lock lk(m_);
+  auto id = std::this_thread::get_id();
+  auto& p = by_thread_[id];
+  if (!p) p = std::make_unique<ad_tape>();  
+  tls_tape = p.get();                    
+}
+\end{minted}
+\end{frame}
+
+\begin{frame}[fragile]{Scaling Up: CPU}
+\begin{minted}{C++}
+void on_scheduler_exit(bool /*worker*/) override {
+  std::scoped_lock lk(m_);
+  by_thread_.erase(std::this_thread::get_id());
+}
+\end{minted}
+\end{frame}
+\end{comment}
 \begin{comment}
 \begin{frame}[fragile]{Subset Assignment}
 \vspace{-1mm}
