@@ -398,7 +398,7 @@ u_g\sim\mathcal N(0,\sigma_u^2).
     \item Performance of high throughput memory intensive programs
     \item Show how modern C++ has led to cleaner and more efficient AD
 \end{itemize}
-\note{Let $v_k$ be the sequence of intermediate expressions for the input $x$ and output $z$ and let $v_K = z$ and $v_0 = x; v_1 = y$. Let $\overline{v}_k$ be the partial gradient of the kth intermediate step. Then we can apply the chain rule to each intermediate step to get the partial gradient.}
+\note{Let $v_k$ be the sequence of intermediate expressions for the input $x$ and output $z$ and let $v_K = z$ and $v_1 = x; v_0 = y$. Let $\overline{v}_k$ be the partial gradient of the kth intermediate step. Then we can apply the chain rule to each intermediate step to get the partial gradient.}
 \end{frame}
 
 
@@ -432,7 +432,7 @@ f\,(x,y) &= f_2\!\big(f_1(x,y)\big) \\
 \end{frame}
 
 
-\begin{frame}{Data Tye: Expression Graph}
+\begin{frame}{Data Type: Expression Graph}
   Goal: Calculate the full gradient by accumulating partial gradients (adjoints) through the a graph of subexpressions.
 \vspace{-1mm}
 $$z = \log(x) \cdot y + \sin(x)$$
@@ -480,13 +480,12 @@ $$z = \log(x) \cdot y + \sin(x)$$
 \begin{itemize}
  \item Forward Pass:
  \begin{equation*}
-     v_2 = f(v_0, v_1)
+     v_2 = f(v_1, v_0)
  \end{equation*}
- \pause
  \item Reverse Pass: Given $v_2$'s adjoint (partial gradient) $\overline{v_2}$
- \\Calculate the local adjoint-Jacobian update for $v_0$ and $v_1$.
+ \\Calculate the local adjoint-Jacobian update for $v_1$ and $v_0$.
  \begin{equation*}
- chain(\overline{v_2}, v_0, v_1) = \left\{\overline{v_0} \pluseq \diffp{v_2}{{v_0}}\overline{v_2},\overline{v_1} \pluseq \diffp{v_2}{{v_1}}\overline{v_2}\right\}
+ chain(\overline{v_2}, v_1, v_0) = \left\{\overline{v_1} \pluseq \diffp{v_2}{{v_1}}\overline{v_2},\overline{v_0} \pluseq \diffp{v_2}{{v_0}}\overline{v_2}\right\}
  \end{equation*}
 \end{itemize}
 \end{frame}
@@ -504,8 +503,8 @@ $$z = \log(x*y)$$
     Gray/.style={circle, draw=black!, fill=gray!35, thick, minimum size=2mm}
   ]
   % Nodes
-  \node[Gray] (v0) at(-8, 0) {$y$};
-  \node[Gray] (v1) at(0, 0) {$x$};
+  \node[Gray] (v0) at(0, 0) {$y$};
+  \node[Gray] (v1) at(-8, 0) {$x$};
   \node[Round] (v2) at(-4, -2) {$*$};
   \node[Round] (v3) at(-6, -4) {$\log$};
 
@@ -529,9 +528,9 @@ $$z = \log(\mathcolor{red}{x} \cdot \mathcolor{red}{y})$$
     Gray/.style={circle, draw=black!, fill=gray!35, thick, minimum size=2mm}
   ]
   % Nodes
-  \node[Gray, label=left:{\textcolor{blue}{$v_0$}}] (v0) at(-8, 0) {$\mathcolor{red}{y}$};
+  \node[Gray, label=left:{\textcolor{blue}{$v_1$}}] (v0) at(0, 0) {$\mathcolor{red}{y}$};
 
-  \node[Gray, label=left:{\textcolor{blue}{$v_1$}}] (v1) at(0, 0) {$\mathcolor{red}{x}$};
+  \node[Gray, label=left:{\textcolor{blue}{$v_0$}}] (v1) at(-8, 0) {$\mathcolor{red}{x}$};
 
 \end{tikzpicture}
 \end{frame}
@@ -548,11 +547,11 @@ $$z = \log(x\mathcolor{red}{\cdot}y)$$
     Gray/.style={circle, draw=black!, fill=gray!35, thick, minimum size=2mm}
   ]
   % Nodes
-  \node[Gray, label=left:{\textcolor{blue}{$v_0$}}] (v0) at(-8, 0) {$y$};
+  \node[Gray, label=left:{\textcolor{blue}{$v_1$}}] (v0) at(0, 0) {$y$};
 
-  \node[Gray, label=left:{\textcolor{blue}{$v_1$}}] (v1) at(0, 0) {$x$};
+  \node[Gray, label=left:{\textcolor{blue}{$v_0$}}] (v1) at(-8, 0) {$x$};
 
-  \node[Round, label=left:{\textcolor{blue}{$v_2 = v_0 \cdot v_1$}}] (v2) at(-4, -2) {$\mathcolor{red}{\cdot}$};
+  \node[Round, label=left:{\textcolor{blue}{$v_2 = v_1 \cdot v_0$}}] (v2) at(-4, -2) {$\mathcolor{red}{\cdot}$};
 
 
   % Lines
@@ -573,9 +572,9 @@ $$z = \mathcolor{red}{\log}(x\cdot y)$$
     Gray/.style={circle, draw=black!, fill=gray!35, thick, minimum size=2mm}
   ]
   % Nodes
-  \node[Gray, label=left:{\textcolor{blue}{$v_0$}}] (v0) at(-8, 0) {$y$};
-  \node[Gray, label=left:{\textcolor{blue}{$v_1$}}] (v1) at(0, 0) {$x$};
-  \node[Round, label=left:{\textcolor{blue}{$v_2 = v_0 \cdot v_1$}}] (v2) at(-4, -2) {$\times$};
+  \node[Gray, label=left:{\textcolor{blue}{$v_1$}}] (v0) at(0, 0) {$y$};
+  \node[Gray, label=left:{\textcolor{blue}{$v_0$}}] (v1) at(-8, 0) {$x$};
+  \node[Round, label=left:{\textcolor{blue}{$v_2 = v_1 \cdot v_0$}}] (v2) at(-4, -2) {$\times$};
   \node[Round, label=left:{\textcolor{blue}{$v_3 = \log{v_2}$}}] (v3) at(-4, -4) {$\mathcolor{red}{\log}$};
   % Lines
   \path [<-, draw, thick] (v2) -- (v0);
@@ -592,7 +591,7 @@ Let $\overline{v}_i$ be the adjoint of $v_i$
 \end{equation*}
 Automatic Differentiation only needs the partials of the intermediates
 \begin{align*}
-    v_2 &= v_0 \cdot v_1 &\: \fracp{v_2}{v_0}&=v_1, \fracp{v_2}{v_1}=v_0\\
+    v_2 &= v_1 \cdot v_0 &\: \fracp{v_2}{v_1}&=v_0, \fracp{v_2}{v_0}=v_1\\
     v_3 &= \log(v_2) &\: \fracp{v_3}{v_2}&=\frac{1}{v_2}\\
 \end{align*}
 \end{frame}
@@ -608,9 +607,9 @@ $$z = \mathcolor{red}{\log(x\cdot y)}$$
     Gray/.style={circle, draw=black!, fill=gray!35, thick, minimum size=2mm}
   ]
   % Nodes
-  \node[Gray, label=left:{\textcolor{blue}{$v_0$}}] (v0) at(-8, 0) {$y$};
-  \node[Gray, label=left:{\textcolor{blue}{$v_1$}}] (v1) at(0, 0) {$x$};
-  \node[Round, label=left:{\textcolor{blue}{$v_2 = v_0 \cdot v_1$}}] (v2) at(-4, -2) {$\times$};
+  \node[Gray, label=left:{\textcolor{blue}{$v_1$}}] (v0) at(0, 0) {$y$};
+  \node[Gray, label=left:{\textcolor{blue}{$v_0$}}] (v1) at(-8, 0) {$x$};
+  \node[Round, label=left:{\textcolor{blue}{$v_2 = v_1 \cdot v_0$}}] (v2) at(-4, -2) {$\times$};
   \node[Round, label=left:{\textcolor{blue}{$v_3 = \log{v_2}$}},
     label=right:{\textcolor{red}{$\adj{v_3}=\pp{v_3}{v_3}=1$}}] (v3) at(-4, -4) {$\mathcolor{red}{\log}$};
   % Lines
@@ -631,9 +630,9 @@ $$z = \log(\mathcolor{red}{x\cdot y})$$
     Gray/.style={circle, draw=black!, fill=gray!35, thick, minimum size=2mm}
   ]
   % Nodes
-  \node[Gray, label=left:{\textcolor{blue}{$v_0$}}] (v0) at(-8, 0) {$y$};
-  \node[Gray, label=left:{\textcolor{blue}{$v_1$}}] (v1) at(0, 0) {$x$};
-  \node[Round, label=left:{\textcolor{blue}{$v_2 = v_0 \cdot v_1$}},
+  \node[Gray, label=left:{\textcolor{blue}{$v_1$}}] (v0) at(0, 0) {$y$};
+  \node[Gray, label=left:{\textcolor{blue}{$v_0$}}] (v1) at(-8, 0) {$x$};
+  \node[Round, label=left:{\textcolor{blue}{$v_2 = v_1 \cdot v_0$}},
     label=right:{\textcolor{red}{$\adj{v_2}=\adj{v_3}\pp{v_3}{v_2}=1\cdot \frac{1}{v_2}$}}] (v2) at(-4, -2) {$\times$};
   \node[Round, label=left:{\textcolor{blue}{$v_3 = \log{v_2}$}},
     label=right:{\textcolor{red}{$\adj{v_3}=\pp{v_3}{v_3}=1$}}] (v3) at(-4, -4) {$\mathcolor{red}{\log}$};
@@ -655,10 +654,10 @@ $$z = \log(x\cdot \mathcolor{red}{y})$$
     Gray/.style={circle, draw=black!, fill=gray!35, thick, minimum size=2mm}
   ]
   % Nodes
-  \node[Gray, label=left:{\textcolor{blue}{$v_0$}}] (v0) at(-8, 0) {$y$};
-  \node[Gray, label=left:{\textcolor{blue}{$v_1$}},
-    label=right:{\textcolor{red}{$\adj{v_1}=\adj{v_2}\pp{v_2}{v_1}=\adj{v_2}v_0$}}] (v1) at(-1, 0) {$x$};
-  \node[Round, label=left:{\textcolor{blue}{$v_2 = v_0 \cdot v_1$}},
+  \node[Gray, label=left:{\textcolor{blue}{$v_1$}}] (v0) at(-1, 0) {$y$};
+  \node[Gray, label=left:{\textcolor{blue}{$v_0$}},
+    label=right:{\textcolor{red}{$\adj{v_0}=\adj{v_2}\pp{v_2}{v_0}=\adj{v_2}v_1$}}] (v1) at(-8, 0) {$x$};
+  \node[Round, label=left:{\textcolor{blue}{$v_2 = v_1 \cdot v_0$}},
     label=right:{\textcolor{red}{$\adj{v_2}=\adj{v_3}\pp{v_3}{v_2}=1\cdot \frac{1}{v_2}$}}] (v2) at(-4, -2) {$\times$};
   \node[Round, label=left:{\textcolor{blue}{$v_3 = \log{v_2}$}},
     label=right:{\textcolor{red}{$\adj{v_3}=\pp{v_3}{v_3}=1$}}] (v3) at(-4, -4) {$\mathcolor{red}{\log}$};
@@ -680,11 +679,11 @@ $$z = \log(\mathcolor{red}{x}\cdot y)$$
     Gray/.style={circle, draw=black!, fill=gray!35, thick, minimum size=2mm}
   ]
   % Nodes
-  \node[Gray, label=left:{\textcolor{blue}{$v_0$}},
-    label=right:{\textcolor{red}{$\adj{v_0}=\adj{v_2}\pp{v_2}{v_0}=\frac{1}{v_2}v_1$}}] (v0) at(-8, 0) {$y$};
   \node[Gray, label=left:{\textcolor{blue}{$v_1$}},
-    label=right:{\textcolor{red}{$\adj{v_1}=\adj{v_2}\pp{v_2}{v_1}=\frac{1}{v_2}v_0$}}] (v1) at(-1, 0) {$x$};
-  \node[Round, label=left:{\textcolor{blue}{$v_2 = v_0 \cdot v_1$}},
+    label=right:{\textcolor{red}{$\adj{v_1}=\adj{v_2}\pp{v_2}{v_1}=\frac{1}{v_2}v_0$}}] (v0) at(-1, 0) {$y$};
+  \node[Gray, label=left:{\textcolor{blue}{$v_0$}},
+    label=right:{\textcolor{red}{$\adj{v_0}=\adj{v_2}\pp{v_2}{v_0}=\frac{1}{v_2}v_1$}}] (v1) at(-8, 0) {$x$};
+  \node[Round, label=left:{\textcolor{blue}{$v_2 = v_1 \cdot v_0$}},
     label=right:{\textcolor{red}{$\adj{v_2}=\adj{v_3}\pp{v_3}{v_2}=1\cdot \frac{1}{v_2}$}}] (v2) at(-4, -2) {$\times$};
   \node[Round, label=left:{\textcolor{blue}{$v_3 = \log{v_2}$}},
     label=right:{\textcolor{red}{$\adj{v_3}=\pp{v_3}{v_3}=1$}}] (v3) at(-4, -4) {$\mathcolor{red}{\log}$};
@@ -706,11 +705,11 @@ $$z = \log(x\cdot y)$$
     Gray/.style={circle, draw=black!, fill=gray!35, thick, minimum size=2mm}
   ]
   % Nodes
-  \node[Gray, label=left:{\textcolor{blue}{$v_0$}},
-    label=right:{\textcolor{red}{$\adj{v_0}=\adj{v_2}\pp{v_2}{v_0}=\frac{1}{v_2}v_1=\frac{1}{y}$}}] (v0) at(-8, 0) {$y$};
   \node[Gray, label=left:{\textcolor{blue}{$v_1$}},
-    label=right:{\textcolor{red}{$\adj{v_1}=\adj{v_2}\pp{v_2}{v_1}=\frac{1}{v_2}v_0=\frac{1}{x}$}}] (v1) at(-2, 0) {$x$};
-  \node[Round, label=left:{\textcolor{blue}{$v_2 = v_0 \cdot v_1$}},
+    label=right:{\textcolor{red}{$\adj{v_1}=\adj{v_2}\pp{v_2}{v_1}=\frac{1}{v_2}v_0=\frac{1}{y}$}}] (v0) at(-2, 0) {$y$};
+  \node[Gray, label=left:{\textcolor{blue}{$v_0$}},
+    label=right:{\textcolor{red}{$\adj{v_0}=\adj{v_2}\pp{v_2}{v_0}=\frac{1}{v_2}v_1=\frac{1}{x}$}}] (v1) at(-8, 0) {$x$};
+  \node[Round, label=left:{\textcolor{blue}{$v_2 = v_1 \cdot v_0$}},
     label=right:{\textcolor{red}{$\adj{v_2}=\adj{v_3}\pp{v_3}{v_2}=1\cdot \frac{1}{v_2}$}}] (v2) at(-4, -2) {$\times$};
   \node[Round, label=left:{\textcolor{blue}{$v_3 = \log{v_2}$}},
     label=right:{\textcolor{red}{$\adj{v_3}=\pp{v_3}{v_3}=1$}}] (v3) at(-4, -4) {$\mathcolor{red}{\log}$};
@@ -772,6 +771,14 @@ Static (Fast) vs. Dynamic (Flexible) graphs
 \end{itemize}
 \end{frame}
 
+\begin{frame}{Operator Overloading Approach}
+The operator overloading approach usually involves:
+\begin{itemize}
+    \item Tracking the expression graph of reverse pass function calls
+    \item A pair scalar type to hold the value and adjoint
+\end{itemize}
+Allows conditional loops and reassignment of values in matrices\\
+\end{frame}
 
 
 \begin{frame}{Make A Tape}
@@ -824,7 +831,7 @@ f(x, y) = \log(x)y + \sin(x)
     Gray/.style={circle, draw=black!, fill=gray!35, thick, minimum size=2mm}
   ]
   % Nodes
-  \node[Gray, label=right:{$v_1$}] (v2) at(0, 0) {$x$};
+  \node[Gray, label=right:{$v_0$}] (v2) at(0, 0) {$x$};
   \node[Gray, label=right:{$v_2$}] (v1) at(2, 0) {$y$};
   \node[Round, label=right:{$v_3$}] (v3) at(4, 0) {$\log$};
   \node[Round, label=right:{$v_4$}] (v4) at(6, 0) {$\sin$};
@@ -849,7 +856,7 @@ f(x, y) = \log(x)y + \sin(x)
     Gray/.style={circle, draw=black!, fill=gray!35, thick, minimum size=2mm}
   ]
   % Nodes
-  \node[Gray, label=right:{$v_1$}] (v2) at(0, 0) {$x$};
+  \node[Gray, label=right:{$v_0$}] (v2) at(0, 0) {$x$};
   \node[Gray, label=right:{$v_2$}] (v1) at(2, 0) {$y$};
   \node[Round, label=right:{$v_3$}] (v3) at(4, 0) {$\log$};
   \node[Round, label=right:{$v_4$}] (v4) at(6, 0) {$\sin$};
@@ -911,17 +918,6 @@ auto foo(T1&& x, T2&& y) {
 \end{minted}
 \end{frame}
 \end{comment}
-
-\begin{frame}{Operator Overloading Approach}
-The operator overloading approach usually involves:
-\begin{itemize}
-    \item Tracking the expression graph of reverse pass function calls
-    \item A pair scalar type to hold the value and adjoint
-\end{itemize}
-Allows conditional loops and reassignment of values in matrices\\
-Nodes of expression graph can be collapsed
-\centerline{\href{https://godbolt.org/z/je173T18Y}{\textcolor{blue}{Example Godbolt}}}
-\end{frame}
 
 \begin{frame}[fragile]{Operator Overloading: Simple}
 \begin{minted}{C++}
@@ -1117,12 +1113,13 @@ struct Tape {
     mbr.release();
   }
   template <typename T, typename Types>
-  auto* add(Types&&... args) {
-    return g_ad.tape.emplace_back(
-      g_ad.pa.new_object<T>(args...));
+  auto* new_node(Types&&... args) {
+    auto* ret = g_tape.pa.new_object<T>(args...);
+    g_tape.tape.emplace_back(ret);
+    return ret;
   }
 };
-static Tape g_ad{};
+static Tape g_tape{};
 \end{minted}
 \end{frame}
 
@@ -1136,7 +1133,7 @@ struct var_impl {
 struct var {
   var_impl* vi_;
   var(double val) :
-    vi_(g_ad.template add<var_impl>(val)) {}
+    vi_(g_tape.template new_node<var_impl>(val)) {}
 }; // 8 bytes
 \end{minted}
 \begin{comment}
@@ -1191,12 +1188,12 @@ struct mul_vv : public var_impl {
   var op1_;
   var op2_;
   void chain() {
-    op1_->adjoint_ += this->adjoint_ * op2_->value_;
-    op2_->adjoint_ += this->adjoint_ * op1_->value_;
+    op1_.adj() += this->adjoint_ * op2_.val();
+    op2_.adj() += this->adjoint_ * op1_.val();
   }
 }; // 40 bytes
 operator*(var op1, var op2) {
-  return var{g_ad.template add<mul_vv>(
+  return var{g_tape.template new_node<mul_vv>(
     op1.val() * op2.val(), op1, op2)};
 }
 \end{minted}
@@ -1232,8 +1229,7 @@ for (int i = 0; i < 1e10; ++i) {
   var y = compute_y(...);
   compute_grads(x, y);
   do_something_with_grads(x.adj(), y.adj());
-  tape.clear();
-  mbr.release();
+  g_tape.clear();
 }
 \end{minted}
 \end{frame}
@@ -1258,12 +1254,12 @@ struct divide_vd;
 
 \begin{frame}[fragile]{Reduce Boilerplate}
 \begin{minted}[escapeinside=||]{C++}
-template <typename F>
+template <Functor F>
 struct callback_var_impl : public var_impl {
   F rev_functor_;
   template <std::floating_point S>
-  explicit callback_var_impl(S&& value,
-    F&& rev_functor)
+  explicit callback_var_impl(
+    S&& value, F&& rev_functor)
     : var_impl(value),
       rev_functor_(rev_functor) {}
   void chain() final { rev_functor_(*this); }
@@ -1272,7 +1268,7 @@ struct callback_var_impl : public var_impl {
 template <std::floating_point FwdVal, typename F>
 auto lambda_var(FwdVal val, F&& rev_functor) {
   return var(
-    new_var_impl<callback_var_impl<F>>(
+    g_tape.template new_node<callback_var_impl<F>>(
       val,
       std::forward<F>(rev_functor)));
 }
@@ -1300,7 +1296,7 @@ inline auto operator*(T1 op1, T2 op2) {
 \begin{frame}{Poor Cache Use}
 \begin{CacheLine}
   % Color some blocks
-  \CacheMarkBelow{0}{var\_base\{dbl, dbl, vptr\}}
+  \CacheMarkBelow{0}{var\_impl\{dbl, dbl, vptr\}}
   \CacheColor{0}{green!60}
   \CacheColor{1}{green!60}
   \CacheColor{2}{green!60}
@@ -1407,19 +1403,6 @@ inline auto operator*(T1&& lhs, T2&& rhs) {
 \end{frame}
 
 \begin{frame}[fragile]{Source Code Transform Ex:}
-\begin{minted}{C++}
-template <typename Expr>
-inline void grad(Expr&& z) {
-  adjoint(z) = 1.0;
-  auto nodes = collect_bfs(z);
-  eval_breadthwise(nodes);
-}
-\end{minted}
-\end{frame}
-\begin{comment}
-  auto z = + (* x (log y)) (* (log (* x y)) y)
-\end{comment}
-\begin{frame}[fragile]{Source Code Transform Ex:}
 \begin{minted}[escapeinside=||]{C++}
 auto z = x |{\mathcolor{red}{*}}| |{\mathcolor{cyan}{log}}|(y) |{\mathcolor{yellow}{+}}| |{\mathcolor{orange}{log}}|(x |{\mathcolor{lime}{*}}| y) |{\mathcolor{magenta}{*}}| y;
 |{\mathcolor{yellow}{expr<Lambda<Plus>}}|,
@@ -1429,6 +1412,22 @@ auto z = x |{\mathcolor{red}{*}}| |{\mathcolor{cyan}{log}}|(y) |{\mathcolor{yell
    var>>
 \end{minted}
 \end{frame}
+
+\begin{frame}[fragile]{Source Code Transform Ex:}
+\begin{minted}{C++}
+template <typename Expr>
+inline void grad(Expr&& z) {
+  adjoint(z) = 1.0;
+  auto nodes = collect_bfs(z);
+  eval_breadthwise(nodes);
+}
+\end{minted}
+\centerline{\href{https://godbolt.org/z/veexMT5vz}{\textcolor{blue}{Example Godbolt}}}
+
+\end{frame}
+\begin{comment}
+  auto z = + (* x (log y)) (* (log (* x y)) y)
+\end{comment}
 
 \begin{frame}{Comparison}
 \begin{table}
@@ -1488,17 +1487,32 @@ struct var_impl<Matrix<double>> {
 \vspace{-8mm}
 \end{frame}
 \begin{frame}[fragile]{Operator Overloading Approach: Matrices}
+\begin{minted}{C++}
+// Array of Structs
+struct Matrix<var> {
+  var* data_;
+};
+\end{minted}
 \begin{itemize}
-    \item Array of Structs \mintinline{latex}{Matrix<var>}:
+    \item Array of Structs:
     \begin{itemize}
         \item Simple, most algorithms Just Work\texttrademark
         \item Adds a lot to expression graph
         \item turns off SIMD
     \end{itemize}
 \end{itemize}
-\pause
+\end{frame}
+\begin{frame}[fragile]{Operator Overloading Approach: Matrices}
+\begin{minted}{C++}
+// Struct of Arrays
+struct var_impl<Matrix<double>> {
+  arena_matrix<double> value_;
+  arena_matrix<double> adjoint_;
+  virtual void chain() {}
+};
+\end{minted}
 \begin{itemize}
-    \item Struct of Arrays \mintinline{latex}{var<Matrix>}:
+    \item Struct of Arrays:
     \begin{itemize}
         \item Hard, everything written out manually
         \item Collapses matrix expressions in tree
@@ -1507,7 +1521,7 @@ struct var_impl<Matrix<double>> {
 \end{itemize}
 \end{frame}
 
-
+\begin{comment}
 \begin{frame}[fragile]{Operator Overloading Approach: Matrices}
 \begin{CacheLine}
   % Color some blocks
@@ -1523,11 +1537,11 @@ struct var_impl<Matrix<double>> {
   \CacheColor{7}{red!60}
 \end{CacheLine}
 \end{frame}
-
+\end{comment}
 \begin{frame}[fragile]{Matrix Multiplication Example}
 \begin{minted}{C++}
 template <typename T1, typename T2>
-requires any_var<T1, T2>
+requires any_var_matrix<T1, T2>
 inline auto operator*(T1&& op1, T2&& op2) {
   return lambda_var(value(op1) * value(op2),
     [op1, op2](auto&& ret) mutable {
@@ -1546,15 +1560,15 @@ inline auto operator*(T1&& op1, T2&& op2) {
 \centering
 \begin{CacheLine}
   % Color some blocks
-  \CacheMarkBelow{0}{mat\_mul\_vv\{dbl*, dbl*, vptr, lambda[var\_impl<Matrix>*, var\_impl<Matrix>*]\}}
+  \CacheMarkBelow{0}{mat\_mul\_vv\{dbl*, dbl*, long int, long int, vptr, lambda[var<Mat>, var<Mat>]\}}
   \CacheColor{0}{green!60}
   \CacheColor{1}{green!60}
   \CacheColor{2}{green!60}
   \CacheColor{3}{green!60}
   \CacheColor{4}{green!60}
-  \CacheColor{5}{red!60}
-  \CacheColor{6}{red!60}
-  \CacheColor{7}{red!60}
+  \CacheColor{5}{green!60}
+  \CacheColor{6}{green!60}
+  \CacheColor{7}{green!60}
 \end{CacheLine}
 \end{frame}
 
@@ -1565,73 +1579,7 @@ inline auto operator*(T1&& op1, T2&& op2) {
 \label{fig-matmul}
 \end{figure}
 \end{frame}
-\begin{frame}[fragile]{Scaling Up: CPU}
-  \begin{itemize}
-    \item Within a node, parallelism is easy
-    \pause
-    \item Parallel + static globals????
-    \pause
-    \item Yes, \pause sometimes
-  \end{itemize}
-\note{We have a ton of static globals, how are supposed to run this stuff in parallel? thread\_local duh! Going to hand wave away observer model for now }
-\end{frame}
 
-
-\begin{frame}{Embarassingly Parallel Not Possible}
-  But reduce sum style very easy
-\end{frame}
-
-\begin{comment}
-\begin{frame}[fragile]{Scaling Up: CPU}
-\begin{minted}{C++}
-struct ad_tape {
-  struct ad_tape_instance {
-    monotonic_buffer_resource mbr{1<<16};
-    polymorphic_allocator<std::byte> pa{&mbr};
-    std::vector<var_impl*> tape;
-    void clear();
-  };
-  static thread_local ad_tape_instance* instance_;
-  static void init();
-};
-thread_local ad_tape_instance* ad_tape::instance_;
-\end{minted}
-\end{frame}
-
-\begin{frame}[fragile]{Scaling Up: CPU}
-\begin{minted}{C++}
-struct ad_tape_obs final : tbb::task_scheduler_observer {
-  using tape_ptr = std::unique_ptr<ad_tape>;
-  std::unordered_map<std::thread::id, tape_ptr> by_thread_;
-  std::mutex m_;
-  void on_scheduler_entry(bool /*worker*/);
-  void on_scheduler_exit(bool /*worker*/);
-};
-\end{minted}
-\end{frame}
-
-\begin{frame}[fragile]{Scaling Up: CPU}
-\begin{minted}{C++}
-void on_scheduler_entry(bool /*worker*/) override {
-  std::scoped_lock lk(m_);
-  auto id = std::this_thread::get_id();
-  auto& p = by_thread_[id];
-  if (!p) p = std::make_unique<ad_tape>();  
-  tls_tape = p.get();                    
-}
-\end{minted}
-\end{frame}
-
-\begin{frame}[fragile]{Scaling Up: CPU}
-\begin{minted}{C++}
-void on_scheduler_exit(bool /*worker*/) override {
-  std::scoped_lock lk(m_);
-  by_thread_.erase(std::this_thread::get_id());
-}
-\end{minted}
-\end{frame}
-\end{comment}
-\begin{comment}
 \begin{frame}[fragile]{Subset Assignment}
 \vspace{-1mm}
 \begin{minted}{C++}
@@ -1762,39 +1710,100 @@ x.slice(1, 3) = x.head(3);
 \end{table}
 \end{frame}
 
-\begin{frame}{Thanks!}
-Repository for benchmarks and slides
-\begin{figure}
-\centerline{\includegraphics[scale=.5]{img/qr-code.png}}
-\label{fig-qr-code}
-\end{figure}
-\end{frame}
-
-
 \begin{frame}[fragile]{Subset Assignment Becomes Very Hard}
 \begin{minted}{C++}
 tempalte <typename T>
 struct var {
-  template <typename S>
-  require AssignableExpression<T, S>
-  inline var_value<T>& operator=(const var_value<S>& other) {
-    arena_t<plain_type_t<T>> prev_val(vi_->val_.rows(), vi_->val_.cols());
-    prev_val.deep_copy(vi_->val_);
-    vi_->val_.deep_copy(other.val());
-    reverse_pass_callback(
-        [this_vi = this->vi_, other_vi = other.vi_, prev_val]() mutable {
-          this_vi->val_.deep_copy(prev_val);
+template <typename S>
+require AssignableExpression<T, S>
+inline var<T>& operator=(const var<S>& other) {
+  arena_matrix<T> prev_val(vi_->val_.rows(), vi_->val_.cols());
+  prev_val.deep_copy(vi_->val_);
+  vi_->val_.deep_copy(other.val());
+  g_tape.callback(
+  [this_vi = this->vi_, other_vi = other.vi_, prev_val]() mutable {
+    this_vi->val_.deep_copy(prev_val);
+    prev_val.deep_copy(this_vi->adj_);
+    this_vi->adj_.setZero();
+    other_vi->adj_ += prev_val;
+  });
+  return *this;
+}
+}
+\end{minted}
+\end{frame}
 
-          // we have no way of detecting aliasing between this->vi_->adj_ and
-          // other.vi_->adj_, so we must copy adjoint before reseting to zero
 
-          // we can reuse prev_val instead of allocating a new matrix
-          prev_val.deep_copy(this_vi->adj_);
-          this_vi->adj_.setZero();
-          other_vi->adj_ += prev_val;
-        });
-    return *this;
-  }
+\begin{frame}{Thanks!}
+Repository for benchmarks and slides
+\begin{figure}
+\centerline{\includegraphics[scale=.1]{img/qr-code.png}}
+\label{fig-qr-code}
+\end{figure}
+\end{frame}
+
+\begin{comment}
+\begin{frame}{Embarassingly Parallel Not Possible}
+  But reduce sum style very easy
+\end{frame}
+
+\begin{frame}[fragile]{Scaling Up: CPU}
+  \begin{itemize}
+    \item Within a node, parallelism is easy
+    \pause
+    \item Parallel + static globals????
+    \pause
+    \item Yes, \pause sometimes
+  \end{itemize}
+\note{We have a ton of static globals, how are supposed to run this stuff in parallel? thread\_local duh! Going to hand wave away observer model for now }
+\end{frame}
+
+
+\begin{frame}[fragile]{Scaling Up: CPU}
+\begin{minted}{C++}
+struct ad_tape {
+  struct ad_tape_instance {
+    monotonic_buffer_resource mbr{1<<16};
+    polymorphic_allocator<std::byte> pa{&mbr};
+    std::vector<var_impl*> tape;
+    void clear();
+  };
+  static thread_local ad_tape_instance* instance_;
+  static void init();
+};
+thread_local ad_tape_instance* ad_tape::instance_;
+\end{minted}
+\end{frame}
+
+\begin{frame}[fragile]{Scaling Up: CPU}
+\begin{minted}{C++}
+struct ad_tape_obs final : tbb::task_scheduler_observer {
+  using tape_ptr = std::unique_ptr<ad_tape>;
+  std::unordered_map<std::thread::id, tape_ptr> by_thread_;
+  std::mutex m_;
+  void on_scheduler_entry(bool /*worker*/);
+  void on_scheduler_exit(bool /*worker*/);
+};
+\end{minted}
+\end{frame}
+
+\begin{frame}[fragile]{Scaling Up: CPU}
+\begin{minted}{C++}
+void on_scheduler_entry(bool /*worker*/) override {
+  std::scoped_lock lk(m_);
+  auto id = std::this_thread::get_id();
+  auto& p = by_thread_[id];
+  if (!p) p = std::make_unique<ad_tape>();
+  tls_tape = p.get();
+}
+\end{minted}
+\end{frame}
+
+\begin{frame}[fragile]{Scaling Up: CPU}
+\begin{minted}{C++}
+void on_scheduler_exit(bool /*worker*/) override {
+  std::scoped_lock lk(m_);
+  by_thread_.erase(std::this_thread::get_id());
 }
 \end{minted}
 \end{frame}
