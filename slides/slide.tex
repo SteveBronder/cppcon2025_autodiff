@@ -3,9 +3,13 @@
 \title{Reverse Mode Automatic Differentiation: Unraveling Expression Graphs \& Library Magic}
 \author{Steve Bronder}
 \date{September 2025}
+%\setbeameroption{show notes}
+%\setbeamertemplate{note page}{\pagecolor{yellow!5}\insertnote}\usepackage{palatino}
+%\setbeameroption{show notes on second screen=left} % Both
 
 \usepackage{graphicx} % Required for inserting images
 \usepackage{xcolor}
+\usepackage{comment}
 \definecolor{codebg}{HTML}{1f2937} % GitHub Dark background
 \usepackage[newfloat]{minted}
 \usepackage{fontspec}
@@ -124,6 +128,7 @@
 % ---------------------------------------------------------------------------
 
 
+\makeatletter
 \def\mathcolor#1#{\@mathcolor{#1}}
 \def\@mathcolor#1#2#3{%
   \protect\leavevmode
@@ -131,13 +136,12 @@
     \color#1{#2}#3%
   \endgroup
 }
+\makeatother
 
 \newcommand{\fracp}[2]{\frac{\partial #1}{\partial #2}}
 \newcommand{\pp}[2]{\frac{\partial#1}{\partial#2}}
 \newcommand{\adj}[1]{\bar{#1}}
 \newcommand{\pluseq}{\mathrel{+}=}
-
-\makeatother
 
 \addtobeamertemplate{navigation symbols}{}{%
     \usebeamerfont{footline}%
@@ -213,17 +217,9 @@
 \caption{Probability of epidemic growth by local area}
 \label{fig-covid}
 \end{figure}
+\note{Go to ChatGPT. Autodiff is the mitochondria of machine learning. AD allows for efficient estimation of many statistical models.}
 \end{frame}
 
-\note{These models can only exist because autodiff exists}
-\begin{frame}{Automatic Differentiation  Affects Your Day to Day}
-\begin{figure}
-\centerline{\includegraphics[scale=.16]{img/chatgpt.png}}
-\label{fig-chatgpt}
-\end{figure}
-\end{frame}
-
-\note{Autodiff is the mitochondria of machine learning. AD allows for efficient estimation of many statistical models.}
 
 \begin{frame}{What is Automatic Differentiation?}
 Computational technique for evaluating derivatives of functions expressed as computer programs by systematically applying the chain rule.
@@ -402,10 +398,9 @@ u_g\sim\mathcal N(0,\sigma_u^2).
     \item Performance of high throughput memory intensive programs
     \item Show how modern C++ has led to cleaner and more efficient AD
 \end{itemize}
+\note{Let $v_k$ be the sequence of intermediate expressions for the input $x$ and output $z$ and let $v_K = z$ and $v_0 = x; v_1 = y$. Let $\overline{v}_k$ be the partial gradient of the kth intermediate step. Then we can apply the chain rule to each intermediate step to get the partial gradient.}
 \end{frame}
 
-\note{Let $v_k$ be the sequence of intermediate expressions for the input $x$ and output $z$ and let $v_K = z$ and $v_0 = x; v_1 = y$. Let $\overline{v}_k$ be the partial gradient of the kth intermediate step. Then we can apply the chain rule to each intermediate step to get the partial gradient.
-}
 
 \begin{frame}[fragile]{What is Automatic Differentiation?}
 \begin{itemize}
@@ -433,9 +428,9 @@ f\,(x,y) &= f_2\!\big(f_1(x,y)\big) \\
    = \frac{1}{y}.
 \end{align*}
 %Automatic Differentiation can do higher order partials, but here we just focus on the first order
+\note{Emphasize: AD is mechanical chain rule over the executed program, not symbolic math or numeric differencing.}
 \end{frame}
 
-\note{Emphasize: AD is mechanical chain rule over the executed program, not symbolic math or numeric differencing.}
 
 \begin{frame}{Data Tye: Expression Graph}
   Goal: Calculate the full gradient by accumulating partial gradients (adjoints) through the a graph of subexpressions.
@@ -468,10 +463,8 @@ $$z = \log(x) \cdot y + \sin(x)$$
 
 \end{tikzpicture}
 \end{frame}
-
-\note{
-Goal: Calculate the full gradient by accumulating partial gradients (adjoints) through the a graph of subexpressions.
-
+\begin{comment}
+\note{Goal: Calculate the full gradient by accumulating partial gradients (adjoints) through the a graph of subexpressions.
  \begin{itemize}
 %     \item Dependency graph of intermediate computations
      \item Think of both data and operations as objects
@@ -481,7 +474,7 @@ Goal: Calculate the full gradient by accumulating partial gradients (adjoints) t
      \end{itemize}
  \end{itemize}
 }
-
+\end{comment}
 \begin{frame}{What is Automatic Differentiation}
  For Reverse Mode AD, each node performs two functions.
 \begin{itemize}
@@ -726,9 +719,9 @@ $$z = \log(x\cdot y)$$
   \path [->, draw, thick] (v2) -- (v1);
   \path [->, draw, thick] (v3) -- (v2);
 \end{tikzpicture}
+\note{We can think of AD operations as a function returning functions for the forward pass and the reverse pass}
 \end{frame}
 
-\note{We can think of AD operations as a function returning functions for the forward pass and the reverse pass}
 
 \begin{frame}{What Do AD Libraries Care About?}
     \begin{itemize}
@@ -768,8 +761,8 @@ $$z = \log(x\cdot y)$$
     \end{itemize}
 \end{itemize}
 Newer AD packages use a combination of both
-\end{frame}
 \note{flexibility, performance, and developer time}
+\end{frame}
 \begin{frame}{How do we keep track of our reverse pass?}
 Static (Fast) vs. Dynamic (Flexible) graphs
 \begin{itemize}
@@ -965,8 +958,8 @@ operator*(var x, var y) {
       x.val() * y.val(), x, y)};
 }
 \end{minted}
+\note{The virtual function in var\_impl is a performance trick}
 \end{frame}
-\note{The virtual function in var_impl is a performance trick}
 \begin{frame}[fragile]{Operator Overloading: Simple}
 \begin{minted}{C++}
 void grad(var& v) {
@@ -984,9 +977,9 @@ while (value(z) < 10) {
 grad(z);
 \end{minted}
 \href{https://github.com/SteveBronder/cppcon2025_autodiff/blob/main/code/benchmarks/shared_ptr.cpp}{\textcolor{blue}{Full Example}}
+\note{At this point run the benchmark for shared}
 \end{frame}
 
-\note{At this point run the benchmark for shared}
 
 \begin{frame}{Issues}
 \begin{tikzpicture}[x=0.8cm,y=0.8cm,>=Latex,font=\small]
@@ -1580,12 +1573,9 @@ inline auto operator*(T1&& op1, T2&& op2) {
     \pause
     \item Yes, \pause sometimes
   \end{itemize}
+\note{We have a ton of static globals, how are supposed to run this stuff in parallel? thread\_local duh! Going to hand wave away observer model for now }
 \end{frame}
 
-\note{
-We have a ton of static globals, how are supposed to run this stuff in parallel? thread_local duh!
-Going to hand wave away observer model for now
-}
 
 \begin{frame}{Embarassingly Parallel Not Possible}
   But reduce sum style very easy

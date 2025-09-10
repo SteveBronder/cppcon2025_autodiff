@@ -1,6 +1,4 @@
-slides/*
-!slides/slide.tex
-!slides/slide.pdf
+slides/_minted/*
 .vscode/
 build/
 code/py/*
@@ -10,3 +8,15 @@ code/py/*
 .Rproj.user
 .Rhistory
 cppcon2025_autodiff.Rproj
+slides/slide.aux
+slides/slide.fdb_latexmk
+slides/slide.fls
+slides/slide.listing
+slides/slide.log
+slides/slide.nav
+slides/slide.out
+slides/slide.snm
+slides/slide.synctex.gz
+slides/slide.toc
+slides/slide.vrb
+slides/slide.xdv
