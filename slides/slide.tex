@@ -375,7 +375,7 @@ u_g\sim\mathcal N(0,\sigma_u^2).
 \item Reverse Mode AD can compute partials derivatives of inputs at the same time
 \end{itemize}
 \end{frame}
-
+\begin{comment}
 \begin{frame}{How Fast is AutoDiff?}
 \begin{figure}
 \centerline{\includegraphics[scale=.5]{img/mocking-spongebob.jpg}}
@@ -383,6 +383,7 @@ u_g\sim\mathcal N(0,\sigma_u^2).
 \label{fig-spongebob}
 \end{figure}
 \end{frame}
+\end{comment}
 
 \begin{frame}{Implementation Matters!}
 \begin{figure}
@@ -489,7 +490,7 @@ $$z = \log(x) \cdot y + \sin(x)$$
  \end{equation*}
 \end{itemize}
 \end{frame}
-
+\begin{comment}
 % Slide 1
 \begin{frame}{Forward Pass}
 \vspace{-1mm}
@@ -721,6 +722,7 @@ $$z = \log(x\cdot y)$$
 \note{We can think of AD operations as a function returning functions for the forward pass and the reverse pass}
 \end{frame}
 
+\end{comment}
 
 \begin{frame}{What Do AD Libraries Care About?}
     \begin{itemize}
@@ -877,7 +879,6 @@ f(x, y) = \log(x)y + \sin(x)
 \end{figure}
 \end{frame}
 
-
 \begin{comment}
 \begin{frame}[fragile]{Cool graph math, how do we do this in a computer?}
 \begin{minted}{C++}
@@ -919,6 +920,7 @@ auto foo(T1&& x, T2&& y) {
 \end{frame}
 \end{comment}
 
+\begin{comment}
 \begin{frame}[fragile]{Operator Overloading: Simple}
 \begin{minted}{C++}
 struct var_impl {
@@ -1048,11 +1050,12 @@ grad(z);
 \end{tikzpicture}
 
 \end{frame}
-
+\end{comment}
 
 \begin{comment}
 \begin{frame}[fragile]{Operator Overloading Approach: Adolc}
 \begin{minted}{C++}
+enum class op_code {LOG_EXPR, ADD_EXPR, MUL_EXPR};
 struct var_impl {
   double val;
   double adj;
@@ -1060,6 +1063,11 @@ struct var_impl {
 struct var {
   var_impl* vi_;
 }; // 8 bytes
+\end{minted}
+\end{frame}
+
+\begin{frame}[fragile]{Operator Overloading Approach: Adolc}
+\begin{minted}{C++}
 struct ad_tape {
   struct expr_info {
     var_impl** out_;
@@ -1067,18 +1075,21 @@ struct ad_tape {
     op_code chain_op;
   };
   std::vector<expr_info> tape_;
-  inline void add_expr(var out, var in1, var in2, op_code expr_op) {
+  inline void add_expr(var out, op_code expr_op,
+    var in1, var in2) {
     tape_.push_back({out.vi_, {in1.vi_, in2.vi_}, expr_op});
     return out;
   }
 };
+static ad_tape g_tape{};
 \end{minted}
 \end{frame}
 
 \begin{frame}[fragile]{Operator Overloading Approach: Adolc}
 \begin{minted}{C++}
 inline auto operator+(var x, var y) {
-  return tape.add_expr(var(x.val() + y.val()), x, y, op_code::ADD_EXPR);
+  return tape.add_expr(
+    var(x.val() + y.val()), x, y, op_code::ADD_EXPR);
 }
 \end{minted}
 \end{frame}
@@ -1086,13 +1097,13 @@ inline auto operator+(var x, var y) {
 \begin{frame}[fragile]{Operator Overloading Approach}
 \begin{minted}{C++}
 void calc_grad(Tape& tape) {
-  tape_val = tape.start();
-  while (tape.start() != tape.end()) {
-    auto op = tape.get_op();
+  auto tape_val = tape.start();
+  while (tape_val != tape.end()) {
+    auto&& op = tape_val.get_op();
     switch (op.chain_op) {
-      case log_expr:
+      case LOG_EXPR:
        op.in(0).adj += op.out(0).adj * 1.0 / op.in(0).val;
-      case mul_expr:
+      case MUL_EXPR:
        op.in(0).adj += op.out(0).adj * op.in(1).val;
        op.in(1).adj += op.out(0).adj * op.in(0).val;
     }
@@ -1105,19 +1116,20 @@ void calc_grad(Tape& tape) {
 \begin{frame}[fragile]{Monotonic Buffer}
 \begin{minted}{C++}
 struct Tape {
-  monotonic_buffer_resource mbr{1<<16};
-  polymorphic_allocator<std::byte> pa{&mbr};
-  std::vector<var_impl*> tape;
-  void clear() {
-    tape.clear();
-    mbr.release();
-  }
-  template <typename T, typename Types>
-  auto* new_node(Types&&... args) {
-    auto* ret = g_tape.pa.new_object<T>(args...);
-    g_tape.tape.emplace_back(ret);
-    return ret;
-  }
+std::array<std::byte, (1 << 16)> buf;
+std::monotonic_buffer_resource mbr{buf.data(), buf.size()};
+std::polymorphic_allocator<std::byte> pa{&mbr};
+std::vector<var_impl*> tape;
+template <typename T, typename Types>
+auto* new_node(Types&&... args) {
+  auto* ret = pa.template new_object<T>(args...);
+  g_tape.tape.emplace_back(ret);
+  return ret;
+}
+void clear() {
+  tape.clear();
+  mbr.release();
+}
 };
 static Tape g_tape{};
 \end{minted}
@@ -1133,7 +1145,7 @@ struct var_impl {
 struct var {
   var_impl* vi_;
   var(double val) :
-    vi_(g_tape.template new_node<var_impl>(val)) {}
+    vi_(g_tape.pa.template new_object<var_impl>(val)) {}
 }; // 8 bytes
 \end{minted}
 \begin{comment}
