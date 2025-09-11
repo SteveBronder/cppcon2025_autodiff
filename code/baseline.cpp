@@ -15,9 +15,11 @@
 #include <benchmark/benchmark.h>
 
 static void baseline_bench(benchmark::State& state) {
+    double x(2.0);
+    double y(4.0);
+    benchmark::DoNotOptimize(x);
+    benchmark::DoNotOptimize(y);
     for (auto _ : state) {
-      double x(2.0);
-      double y(4.0);
       double z_fwd = x * std::log(y) + std::log(x * y) * y;
       double x_rev = y / x + std::log(y);
       double y_rev = x / y + std::log(x * y) + 1;

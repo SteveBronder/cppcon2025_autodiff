@@ -1260,26 +1260,17 @@ struct mul_vv : public var_impl {
     op2_.adj += this->adjoint_ * op1_.val();
   }
 }; // 40 bytes
+\end{minted}
+\end{frame}
+\note{..}
+
+\begin{frame}[fragile]{Operator Overloading: Expression Node}
+\begin{minted}{C++}
 var operator*(var op1, var op2) {
   return new_node<mul_vv>(op1.val() * op2.val(),
     op1, op2);
 }
 \end{minted}
-\begin{comment}
-\centering
-\begin{CacheLine}
-  % Color some blocks
-  \CacheMarkBelow{0}{mul\_vv\{dbl, dbl, vptr, var\_impl*, var\_impl*\}}
-  \CacheColor{0}{green!60}
-  \CacheColor{1}{green!60}
-  \CacheColor{2}{green!60}
-  \CacheColor{3}{green!60}
-  \CacheColor{4}{green!60}
-  \CacheColor{5}{red!60}
-  \CacheColor{6}{red!60}
-  \CacheColor{7}{red!60}
-\end{CacheLine}
-\end{comment}
 \end{frame}
 \note{..}
 
@@ -1287,15 +1278,15 @@ var operator*(var op1, var op2) {
 \begin{minted}[escapeinside=||]{C++}
 void grad(var& v) {
   v.adj = 1.0;
-  for (auto&& x : tape | std::views::reverse) {
-    x->chain();
+  for (auto&& node : tape | std::views::reverse) {
+    node->chain();
   }
 }
 \end{minted}
 \end{frame}
 \note{..}
 
-\begin{frame}[fragile]{Monotonic Buffer}
+\begin{frame}[fragile]{Operator Overloading: Example}
 \begin{minted}[escapeinside=||]{C++}
 void compute_grads(var x, var y) {
   var z = -10;
@@ -1304,6 +1295,12 @@ void compute_grads(var x, var y) {
   }
   grad(z);
 }
+\end{minted}
+\end{frame}
+\note{..}
+
+\begin{frame}[fragile]{Operator Overloading: Example}
+\begin{minted}[escapeinside=||]{C++}
 // Later in program
 for (int i = 0; i < 1e10; ++i) {
   var x = compute_x(...);
@@ -1489,6 +1486,8 @@ inline auto operator*(T1&& lhs, T2&& rhs) {
 \begin{frame}[fragile]{Source Code Transform Ex:}
 \begin{minted}[escapeinside=||]{C++}
 auto z = x |{\mathcolor{red}{*}}| |{\mathcolor{cyan}{log}}|(y) |{\mathcolor{yellow}{+}}| |{\mathcolor{orange}{log}}|(x |{\mathcolor{lime}{*}}| y) |{\mathcolor{magenta}{*}}| y;
+// Polish Notation
+// |{\mathcolor{yellow}{+}}| (|{\mathcolor{red}{*}}| x (|{\mathcolor{cyan}{log}}| y)) (|{\mathcolor{magenta}{*}}| (|{\mathcolor{orange}{log}}| (|{\mathcolor{lime}{*}}| x y)) y)
 |{\mathcolor{yellow}{expr<Lambda<Plus>}}|,
   |{\mathcolor{red}{expr<Lambda<Mult>}}|, var, |{\mathcolor{cyan}{expr<Lambda<Log>}}|, var>>,
   |{\mathcolor{magenta}{expr<Lambda<Mult>}}|,
@@ -1522,13 +1521,11 @@ inline void grad(Expr&& z) {
   \label{tab:firsttable} % Label for referencing
   \begin{tabular}{|l|r|c|} % Three columns: left, center, right, with vertical lines
     \hline % Top horizontal line
-    Method & CPU Time & \% Improvement \\ % First row (headers)
+    Method & CPU Time & \% Slowdown \\ % First row (headers)
     \hline % Line after headers
-    Shared Ptr & 508ns & 1.0 \\
-    MonoBuff   & 121ns & 3.9x \\
-    Lambda     & 112ns & 4.2x \\
-    Source Code Transform        &  26.5ns & 19x \\
-    Baseline & 2.82ns & 180x\\
+    Dynamic     & 47.8ns & 600x \\
+    Source Code Transform &  6.3ns & .21x \\
+    Baseline & 5.23ns & \\
     \hline % Bottom horizontal line
   \end{tabular}
 \end{table}

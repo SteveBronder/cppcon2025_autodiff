@@ -56,7 +56,7 @@ struct is_var_base : detail::is_var_base<std::decay_t<T>> {};
 template <typename T>
 inline constexpr bool is_var_base_v = is_var_base<T>::value;
 template <typename T, typename... Args>
-auto* make_inbuffer(Args&&... args) {
+inline auto* make_inbuffer(Args&&... args) {
   if constexpr (!is_var_base_v<T>) {
     auto* ret = pa.new_object<T>(std::forward<Args>(args)...);
     var_vec.push_back(ret);
@@ -170,7 +170,8 @@ inline auto make_var(T&& ret_val, Lambda&& lambda) {
 template <typename T1, typename T2>
 requires any_var_all_scalar<T1, T2>
 inline auto operator+(T1 lhs, T2 rhs) {
-  return make_var(value(lhs) + value(rhs), [lhs, rhs](auto&& ret) mutable {
+  return make_var(value(lhs) + value(rhs), 
+  [lhs, rhs](auto&& ret) mutable {
     if constexpr (is_var_v<T1>) {
       adjoint(lhs) += adjoint(ret);
     }
@@ -180,7 +181,7 @@ inline auto operator+(T1 lhs, T2 rhs) {
   });
 }
 template <>
-var& var::operator+=(var x) {
+inline var& var::operator+=(var x) {
     this->vi_ = ((*this) + x).vi_;
     return *this;
 }
