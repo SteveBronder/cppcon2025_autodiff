@@ -3,9 +3,9 @@
 \title{Reverse Mode Automatic Differentiation: Unraveling Expression Graphs \& Library Magic}
 \author{Steve Bronder}
 \date{September 2025}
-%\setbeameroption{show notes}
-%\setbeamertemplate{note page}{\pagecolor{yellow!5}\insertnote}\usepackage{palatino}
-%\setbeameroption{show notes on second screen=left} % Both
+\setbeameroption{show notes}
+\setbeamertemplate{note page}{\pagecolor{yellow!5}\insertnote}\usepackage{palatino}
+%\setbeameroption{show notes on second screen=right} % Both
 
 \usepackage{graphicx} % Required for inserting images
 \usepackage{xcolor}
@@ -186,7 +186,7 @@
     \end{tikzpicture}
   \end{frame}
 }
-
+\note{..}
 
 \begin{comment}
 
@@ -235,13 +235,14 @@
 \caption{Probability of epidemic growth by local area}
 \label{fig-covid}
 \end{figure}
-\note{Go to ChatGPT. Autodiff is the mitochondria of machine learning. AD allows for efficient estimation of many statistical models.}
 \end{frame}
+\note{Go to ChatGPT. Autodiff is the mitochondria of machine learning. AD allows for efficient estimation of many statistical models.}
 
 
 \begin{frame}{What is Automatic Differentiation?}
 Computational method to calculate gradients of functions in a program by systematically applying the chain rule
 \end{frame}
+\note{..}
 
 \begin{frame}{Why use Automatic Differentiation}
 Ex: Newton's root finding method
@@ -264,6 +265,7 @@ For models we want to estimate parameter values. Change the slide here so that w
 \centering
 \animategraphics[loop,controls,scale=0.12]{6}{gif/frame}{0001}{0266}
 \end{frame}
+\note{..}
 
 \begin{frame}{Why use Automatic Differentiation?}
 \begin{itemize}
@@ -299,6 +301,7 @@ Choices:
         \item[-] automatic differentiation
     \end{itemize}
 \end{frame}
+\note{..}
 
 
 \begin{frame}{Why use Automatic Differentiation?}
@@ -380,9 +383,9 @@ p(\mathbf f\mid\boldsymbol\psi)
 &\qquad
 u_g\sim\mathcal N(0,\sigma_u^2).
 \end{align*}
-
-
 \end{frame}
+\note{..}
+
 \begin{frame}{Why use Automatic Differentiation?}
 \begin{itemize}
 \item[-] I do not wish to write those gradients by hand 
@@ -396,6 +399,8 @@ u_g\sim\mathcal N(0,\sigma_u^2).
 \item Reverse Mode AD can compute partials derivatives of inputs at the same time
 \end{itemize}
 \end{frame}
+\note{..}
+
 \begin{comment}
 RIP Bob said no :(
 \begin{frame}{How Fast is AutoDiff?}
@@ -414,6 +419,7 @@ RIP Bob said no :(
 \label{fig-mac-red-bench}
 \end{figure}
 \end{frame}
+\note{..}
 
 \begin{frame}{Goal of this talk}
 \begin{itemize}
