@@ -14,6 +14,8 @@
 \usepackage[newfloat]{minted}
 \usepackage{fontspec}
 \setmonofont{Fira Code}
+\usepackage{enumitem}
+\setlist[itemize,1]{label=-}
 % Colors
 \usepackage{xcolor}
 
@@ -150,6 +152,15 @@
     \insertframenumber/\inserttotalframenumber
 }
 
+
+\logo{
+  \begin{tikzpicture}[overlay,remember picture]
+    \node[anchor=south west, xshift=1em, yshift=1em] at (current page.south west) {
+      \includegraphics[width=2cm]{img/flatiron.png}
+    };
+  \end{tikzpicture}
+}
+
 \begin{document}
 \expandafter\def\expandafter\insertshorttitle\expandafter{%
   \insertshorttitle\hfill%
@@ -158,17 +169,24 @@
 % Slide
 
 { % all template changes are local to this group.
-    \setbeamertemplate{navigation symbols}{}
-    \begin{frame}<article:0>[plain]
-        \begin{tikzpicture}[remember picture,overlay]
-            \node[at=(current page.center)] {
-                \includegraphics[keepaspectratio,
-                                 width=\paperwidth,
-                                 height=\paperheight]{img/title_card.png}
-            };
-        \end{tikzpicture}
-     \end{frame}
+  \setbeamertemplate{navigation symbols}{}
+  \begin{frame}<article:0>[plain]
+    \begin{tikzpicture}[remember picture,overlay]
+      % Background title card
+      \node[at=(current page.center)] {
+        \includegraphics[keepaspectratio,
+                         width=\paperwidth,
+                         height=\paperheight]{img/title_card.png}
+      };
+      % Logo on top, bottom-left
+      \node[anchor=south west, xshift=1em, yshift=1em]
+        at (current page.south west) {
+          \includegraphics[width=2cm]{img/flatiron.png}
+      };
+    \end{tikzpicture}
+  \end{frame}
 }
+
 
 \begin{comment}
 
@@ -222,7 +240,7 @@
 
 
 \begin{frame}{What is Automatic Differentiation?}
-Computational technique for evaluating derivatives of functions expressed as computer programs by systematically applying the chain rule.
+Computational method to calculate gradients of functions in a program by systematically applying the chain rule
 \end{frame}
 
 \begin{frame}{Why use Automatic Differentiation}
@@ -244,22 +262,22 @@ For models we want to estimate parameter values. Change the slide here so that w
     f\,'(x) &= 3x^2 + 2x + 1
 \end{align}
 \centering
-\animategraphics[loop,controls,scale=0.35]{2}{gif/newton-}{0}{17}
+\animategraphics[loop,controls,scale=0.12]{6}{gif/frame}{0001}{0266}
 \end{frame}
 
 \begin{frame}{Why use Automatic Differentiation?}
 \begin{itemize}
-    \item Hamiltonian Monte Carlo:
+    \item[-] Hamiltonian Monte Carlo:
     \begin{itemize}
-    \item $\frac{dp}{dt}=-\nabla_\theta\log p(\theta|y)$
+    \item[] $\frac{dp}{dt}=\nabla_\theta\log p(\theta|y)$
     \end{itemize}
-    \item BFGS:
+    \item[-] BFGS:
     \begin{itemize}
-    \item $s_k=-H_k \nabla_\theta f(\theta_k)$
+    \item[] $s_k=-H_k \nabla_\theta f(\theta_k)$
     \end{itemize}
-    \item Stochastic Gradient Descent:
+    \item[-] Stochastic Gradient Descent:
     \begin{itemize}
-    \item $\theta_{t+1}=\theta_t−\eta\nabla_\theta L(\theta_t;x_t)$
+    \item[] $\theta_{t+1}=\theta_t−\eta\nabla_\theta L(\theta_t;x_t)$
     \end{itemize}
 \end{itemize}
 \end{frame}
@@ -272,16 +290,14 @@ Stochastic Gradient Descent: Updates parameters by stepping $\theta$ a learning-
 }
 
 \begin{frame}{Why use Automatic Differentiation?}
-\begin{itemize}
-    \item Choices
+Choices:
     \begin{itemize}
-        \item Write by hand
-        \item finite difference,
-        \item symbolic differentiation
-        \item spectral differentiation
-        \item automatic differentiation
+        \item[-] Write by hand
+        \item[-] finite difference,
+        \item[-] symbolic differentiation
+        \item[-] spectral differentiation
+        \item[-] automatic differentiation
     \end{itemize}
-\end{itemize}
 \end{frame}
 
 
@@ -369,13 +385,19 @@ u_g\sim\mathcal N(0,\sigma_u^2).
 \end{frame}
 \begin{frame}{Why use Automatic Differentiation?}
 \begin{itemize}
+\item[-] I do not wish to write those gradients by hand 
+\pause
 \item Faster than finite difference, more flexible than symbolic differentiation
+\pause
 \item Allows for unknown length while and for loops
+\pause
 \item Accurate to floating point precision
+\pause
 \item Reverse Mode AD can compute partials derivatives of inputs at the same time
 \end{itemize}
 \end{frame}
 \begin{comment}
+RIP Bob said no :(
 \begin{frame}{How Fast is AutoDiff?}
 \begin{figure}
 \centerline{\includegraphics[scale=.5]{img/mocking-spongebob.jpg}}
@@ -395,7 +417,7 @@ u_g\sim\mathcal N(0,\sigma_u^2).
 
 \begin{frame}{Goal of this talk}
 \begin{itemize}
-    \item Explain how Reverse Mode Automatic Differentiation works
+    \item How Reverse Mode Automatic Differentiation works
     \item Performance of high throughput memory intensive programs
     \item Show how modern C++ has led to cleaner and more efficient AD
 \end{itemize}
