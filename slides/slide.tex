@@ -240,32 +240,44 @@
 
 
 \begin{frame}{What is Automatic Differentiation?}
-Computational method to calculate gradients of functions in a program by systematically applying the chain rule
+Automatically compute exact gradients by treating a program as a graph of elementary operations and applying the chain rule on that graph
 \end{frame}
-\note{..}
+\note{
+Reverse-mode automatic differentiation (AD) lets us get derivatives of a program's output with respect to its inputs without doing algebra by hand. Imagine the code as a computational graph of simple ops (add, multiply, sin, etc.). In the forward pass, we execute the code normally, get the output, and save intermediate results. Then we do a backward pass effectively running the chain rule on the graph from the output back to the inputs. This two-pass strategy is what powers deep learning frameworks (it's basically backpropagation), and it efficiently produces gradients even for complex code.
+}
 
-\begin{frame}{Why use Automatic Differentiation}
+\begin{frame}{What is a gradient?}
 Ex: Newton's root finding method
 \begin{equation*}
-    x_{n+1} = x_n - \frac{f\left(x_n\right)}{f\,'\left(x_{n}\right)}
+    x_{n+1} = x_n - \frac{f\left(x_n\right)}{f_x'\left(x_{n}\right)}
 \end{equation*}
 find $f(x)=y$ where $y=0$
 \end{frame}
 \note{
-How do we estimate solutions for equations? A simple method is the newton method.
-Why are gradients useful? We use gradients to solve
-For models we want to estimate parameter values. Change the slide here so that we show how to solve for parameters using Newton's method
+\begin{itemize}
+\item[-] Note that $f_x'$ is the gradient of $f$ with respect to $x$
+\item[] How do we estimate solutions for equations? A simple method is the newton method.
+\item[] Why are gradients useful? We use gradients to solve
+\item[] For models we want to estimate parameter values. Change the slide here so that we show how to solve for parameters using Newton's method
+\end{itemize}
 }
 
-\begin{frame}{Why use Automatic Differentiation?}
+\begin{frame}{What is a gradient?}
 \begin{align}
     f(x) &= x^3 + x^2 + x\\
-    f\,'(x) &= 3x^2 + 2x + 1
+    f_x'(x) &= 3x^2 + 2x + 1
 \end{align}
 \centering
-\animategraphics[loop,controls,scale=0.12]{6}{gif/frame}{0001}{0266}
+% Actual 266
+\animategraphics[loop,controls,scale=0.12]{6}{gif/frame}{0001}{020}
 \end{frame}
-\note{..}
+\note{
+  \begin{itemize}
+    \item[] The gradient tells us
+    \item[-] The direction the function increases most quickly from $x_n$
+    \item[-] The rate of increase of the function at $x_n$
+  \end{itemize}
+}
 
 \begin{frame}{Why use Automatic Differentiation?}
 \begin{itemize}
@@ -284,11 +296,20 @@ For models we want to estimate parameter values. Change the slide here so that w
 \end{itemize}
 \end{frame}
 \note{
-Hamiltonian Monte Carlo: Updates the momentum $p$ using the (negative) gradient of the log posterior—i.e., the deterministic “force” driving the Hamiltonian dynamics.
-
-BFGS: Forms the search step $s_k$ as a quasi-Newton descent direction by preconditioning the gradient with the current inverse-Hessian estimate $H_k$.
-
-Stochastic Gradient Descent: Updates parameters by stepping $\theta$ a learning-rate $\eta$ in the direction opposite the stochastic gradient of the loss evaluated on $x_t$.
+\begin{itemize}
+\item[] Hamiltonian Monte Carlo:
+\begin{itemize}
+  \item[-] Updates the momentum $p$ using the (negative) gradient of the log posterior—i.e., the deterministic “force” driving the Hamiltonian dynamics.
+\end{itemize}
+\item[] BFGS:
+\begin{itemize}
+  \item[-] Forms the search step $s_k$ as a quasi-Newton descent direction by preconditioning the gradient with the current inverse-Hessian estimate $H_k$.
+\end{itemize}
+\item[] Stochastic Gradient Descent:
+\begin{itemize}
+  \item[-] Updates parameters by stepping $\theta$ a learning-rate $\eta$ in the direction opposite the stochastic gradient of the loss evaluated on $x_t$.
+\end{itemize}
+\end{itemize}
 }
 
 \begin{frame}{Why use Automatic Differentiation?}
@@ -384,22 +405,23 @@ p(\mathbf f\mid\boldsymbol\psi)
 u_g\sim\mathcal N(0,\sigma_u^2).
 \end{align*}
 \end{frame}
-\note{..}
+\note{Move from this slide quickly}
 
 \begin{frame}{Why use Automatic Differentiation?}
 \begin{itemize}
-\item[-] I do not wish to write those gradients by hand 
+\item[-] I do not wish to write those gradients by hand
 \pause
-\item Faster than finite difference, more flexible than symbolic differentiation
+\note{..}
+\item Instead of N finite differences, just a forward and backward pass
 \pause
+\note{..}
 \item Allows for unknown length while and for loops
 \pause
+\note{..}
 \item Accurate to floating point precision
 \pause
-\item Reverse Mode AD can compute partials derivatives of inputs at the same time
 \end{itemize}
 \end{frame}
-\note{..}
 
 \begin{comment}
 RIP Bob said no :(
@@ -414,8 +436,8 @@ RIP Bob said no :(
 
 \begin{frame}{Implementation Matters!}
 \begin{figure}
-\centerline{\includegraphics[scale=.5]{img/mac_regression_plot.png}}
-\caption{Benchmark for $f\,'$ given $f(y) = N(y | X\theta,\sigma)$}
+\centerline{\includegraphics[scale=.5]{img/linux_regression_plot.png}}
+\caption{Benchmark for $f$ and $f\,'$ given $f(y) = N(y | X\theta,\sigma)$}
 \label{fig-mac-red-bench}
 \end{figure}
 \end{frame}
@@ -425,10 +447,10 @@ RIP Bob said no :(
 \begin{itemize}
     \item How Reverse Mode Automatic Differentiation works
     \item Performance of high throughput memory intensive programs
-    \item Show how modern C++ has led to cleaner and more efficient AD
+    \item How modern C++ has led to cleaner and more efficient AD
 \end{itemize}
-\note{Let $v_k$ be the sequence of intermediate expressions for the input $x$ and output $z$ and let $v_K = z$ and $v_1 = x; v_0 = y$. Let $\overline{v}_k$ be the partial gradient of the kth intermediate step. Then we can apply the chain rule to each intermediate step to get the partial gradient.}
 \end{frame}
+\note{Let $v_k$ be the sequence of intermediate expressions for the input $x$ and output $z$ and let $v_K = z$ and $v_1 = x; v_0 = y$. Let $\overline{v}_k$ be the partial gradient of the kth intermediate step. Then we can apply the chain rule to each intermediate step to get the partial gradient.}
 
 
 \begin{frame}[fragile]{What is Automatic Differentiation?}
@@ -438,28 +460,41 @@ RIP Bob said no :(
 \end{itemize}
 \begin{align*}
 f\,(x, y) &= \log(x\cdot y)\\
-f_1(x, y) &= x \cdot y &\; \fracp{f_1}{x} &= y &\: \fracp{f_1}{y} = x\\[2pt]
-f_2(u) &= \log(u) &\; \fracp{f_2}{u} &= \frac{1}{u}&\\[2pt]
-f\,(x,y) &= f_2\!\big(f_1(x,y)\big) \\
+g(x, y) &= x \cdot y \\
+h(u) &= \log(u) \\
+f\,(x,y) &= h\,\!\big(g(x,y)\big) \\
 \end{align*}
-\pause
-\vspace{-13mm}
+\end{frame}
+\note{
+  \begin{itemize}
+    \item Emphasize: AD is mechanical chain rule over the executed program, not symbolic math or numeric differencing.
+    \item Automatic Differentiation can do higher order partials, but here we just focus on the first order
+    \item Now we rewrite $f$ in terms of $h$ and $g$
+  \end{itemize}
+}
+
+\begin{frame}[fragile]{What is Automatic Differentiation?}
+\begin{itemize}
+  \item AD computes gradients of a program by applying the chain rule to its subexpressions.
+%  \item Given a function $f$ with inputs $x\in\mathbb{R}^n$ and outputs $z\in \mathbb{R}^m$ we want to "calculate the Jacobian $J\,$" with size $(m, n)$
+\end{itemize}
 \begin{align*}
-\fracp{f}{x}
-  &= \fracp{f_2}{f_1} \cdot \fracp{f_1}{x}
-   = \frac{1}{f_1(x, y)}\cdot y
-   = \frac{y}{x\cdot y}
-   = \frac{1}{x},\\[4pt]
-\fracp{f}{y}
-  &= \fracp{f_2}{f_1} \cdot \fracp{f_1}{y}
-   = \frac{1}{f_1(x, y)}\cdot x
-   = \frac{x}{x\cdot y}
-   = \frac{1}{y}.
+f\,(x,y) &= h\,\!\big(g(x,y)\big) \\
+g(x, y) &= x \cdot y \;& g_x\,'(x,y) = y \:\; g_y\,'(x,y) = x\\[2pt]
+h(u) &= \log(u) \;& h_u'(u) = u^{-1}\\
+\end{align*}
+\vspace{-1cm}
+\begin{align*}
+f\,'_x(x,y)
+  &= h'_g\!\big(g(x,y)\big)\,\cdot\, g\,'_x(x,y) \\
+  &= \frac{1}{g(x, y)} \cdot y = \frac{1}{x}, \\[6pt]
+f\,'_y(x,y)
+  &= h'_g\!\big(g(x,y)\big)\,\cdot\, g\,'_y(x,y) \\
+  &= \frac{1}{g(x, y)} \cdot x = \frac{1}{y}.
 \end{align*}
 %Automatic Differentiation can do higher order partials, but here we just focus on the first order
-\note{Emphasize: AD is mechanical chain rule over the executed program, not symbolic math or numeric differencing.}
 \end{frame}
-
+\note{Emphasize: AD is mechanical chain rule over the executed program, not symbolic math or numeric differencing.}
 
 \begin{frame}{Data Type: Expression Graph}
   Goal: Calculate the full gradient by accumulating partial gradients (adjoints) through the a graph of subexpressions.
@@ -478,7 +513,7 @@ $$z = \log(x) \cdot y + \sin(x)$$
   \node[Gray] (v2) at(0, 0) {$x$};
   \node[Round] (v3) at(-4, -2) {$\log$};
   \node[Round] (v4) at(1, -2) {$\sin$};
-  \node[Round] (v5) at(-6, -4) {$\times$};
+  \node[Round] (v5) at(-6, -4) {$(\cdot)$};
   \node[Round] (v6) at(-3, -5.5) {$+$};
 
   % Lines
@@ -492,34 +527,134 @@ $$z = \log(x) \cdot y + \sin(x)$$
 
 \end{tikzpicture}
 \end{frame}
-\begin{comment}
-\note{Goal: Calculate the full gradient by accumulating partial gradients (adjoints) through the a graph of subexpressions.
- \begin{itemize}
-%     \item Dependency graph of intermediate computations
-     \item Think of both data and operations as objects
-     \begin{itemize}
-     \item Forward pass to calculate the values of the intermediates subexpressions
-     \item Reverse pass to calculate the local adjoint-Jacobian update of subexpressions
-     \end{itemize}
- \end{itemize}
+\note{
+  \begin{itemize}
+  \item[-] Each node of expression graph is an intermediate calculation we know the gradient of with respect to its inputs
+  \item[-] For each node we compute a forward pass till we get to our end node
+  \item[-] Once we reach our end node we can compute the reverse pass
+  \end{itemize}
 }
-\end{comment}
-\begin{frame}{What is Automatic Differentiation}
+
+
+\begin{frame}{Expression Graph: Traversal}
+\begin{equation*}
+f(x, y) = \log(x)y + \sin(x)
+\end{equation*}
+\begin{figure}
+  \begin{tikzpicture}
+  [
+    Round/.style={circle, draw=black!, fill=green!0, thick, minimum size=2mm},
+    Red/.style={circle, draw=black!, fill=red!255, thick, minimum size=2mm},
+    Yellow/.style={circle, draw=black!, fill=yellow!255, thick, minimum size=10mm},
+    Gray/.style={circle, draw=black!, fill=gray!35, thick, minimum size=2mm}
+  ]
+  % Nodes
+  \node[Gray, label=right:{$v_0$}] (v2) at(0, 0) {$x$};
+  \node[Gray, label=right:{$v_2$}] (v1) at(2, 0) {$y$};
+  \node[Round, label=right:{$v_3$}] (v3) at(4, 0) {$\log$};
+  \node[Round, label=right:{$v_4$}] (v4) at(8, 0) {$\sin$};
+  \node[Round, label=right:{$v_5$}] (v5) at(6, 0) {$(\cdot)$};
+  \node[Round, label=right:{$v_6$}] (v6) at(10, 0) {$+$};
+
+
+  % Lines
+  \path [->, draw, thick] (v1) to[out=20,in=160] (v5);
+  \path [->, draw, thick] (v2) to[out=-20,in=-160] (v3);
+  \path [->, draw, thick] (v2) to[out=-20,in=-160] (v4);
+  \path [->, draw, thick] (v3) to[out=-20,in=-160] (v5);
+  \path [->, draw, thick] (v4) to[out=40,in=120] (v6);
+  \path [->, draw, thick] (v5) to[out=320,in=210] (v6);
+
+\end{tikzpicture}
+  \begin{tikzpicture}
+  [
+    Round/.style={circle, draw=black!, fill=green!0, thick, minimum size=2mm},
+    Red/.style={circle, draw=black!, fill=red!255, thick, minimum size=2mm},
+    Yellow/.style={circle, draw=black!, fill=yellow!255, thick, minimum size=10mm},
+    Gray/.style={circle, draw=black!, fill=gray!35, thick, minimum size=2mm}
+  ]
+  % Nodes
+  \node[Gray, label=right:{$v_0$}] (v2) at(0, 0) {$x$};
+  \node[Gray, label=right:{$v_2$}] (v1) at(2, 0) {$y$};
+  \node[Round, label=right:{$v_3$}] (v3) at(4, 0) {$\log$};
+  \node[Round, label=right:{$v_4$}] (v4) at(8, 0) {$\sin$};
+  \node[Round, label=right:{$v_5$}] (v5) at(6, 0) {$(\cdot)$};
+  \node[Round, label=right:{$v_6$}] (v6) at(10, 0) {$+$};
+
+
+  % Lines
+  \path [<-, draw, thick] (v1) to[out=20,in=160] (v5);
+  \path [<-, draw, thick] (v2) to[out=-20,in=-160] (v3);
+  \path [<-, draw, thick] (v2) to[out=-20,in=-160] (v4);
+  \path [<-, draw, thick] (v3) to[out=-20,in=-160] (v5);
+  \path [<-, draw=red, thick] (v4) to[out=40,in=120] (v6);
+  \path [<-, draw=red, thick] (v5) to[out=320,in=210] (v6);
+
+\end{tikzpicture}
+\caption{Topological sort of expression graph}
+\end{figure}
+\end{frame}
+\note{
+  \begin{itemize}
+  \item[-] We can do a Topological sort on the graph and traverse it this way
+  \item[-] This is how we should execute the program linearly on a thread
+  \end{itemize}
+}
+
+\begin{frame}{Expression Graph: Node}
  For Reverse Mode AD, each node performs two functions.
 \begin{itemize}
  \item Forward Pass:
  \begin{equation*}
-     v_2 = f(v_1, v_0)
+     z = f\,(x, y)
  \end{equation*}
- \item Reverse Pass: Given $v_2$'s adjoint (partial gradient) $\overline{v_2}$
- \\Calculate the local adjoint-Jacobian update for $v_1$ and $v_0$.
+ \item Reverse Pass: Given $z$'s adjoint (partial gradient) $\overline{z}$
+ \\Calculate the local adjoint-Jacobian update for $x$ and $y$.
  \begin{equation*}
- chain(\overline{v_2}, v_1, v_0) = \left\{\overline{v_1} \pluseq \diffp{v_2}{{v_1}}\overline{v_2},\overline{v_0} \pluseq \diffp{v_2}{{v_0}}\overline{v_2}\right\}
+ chain(\overline{z}, y, x) =
+ \begin{cases}
+  \overline{y} \pluseq \overline{z} \cdot z_{y}\,'\\
+  \overline{x} \pluseq \overline{z} \cdot z_{x}\,'
+ \end{cases}
  \end{equation*}
 \end{itemize}
 \end{frame}
+\note{
+\begin{itemize}
+\item[] Adjoint = local gradient
+\begin{itemize}
+\item[-] Each node in the graph holds an adjoint value, which is the partial derivative of the final output with respect to that node's value. It accumulates all contributions of that node to the output's gradient.
+\end{itemize}
+\item[] Backpropagation (chain rule):
+\begin{itemize}
+  \item[-] During the backward pass, each operation uses its adjoint and the operation's local derivative to add to its input nodes' adjoints. This is how gradients flow backward through the graph
+\end{itemize}
+\end{itemize}
+}
+
+\begin{frame}[fragile]{Pseudocode for AutoDiff}
+\begin{minted}{C++}
+// compute and store node.value
+struct node {
+  double val;
+  double adj;
+  virtual void chain() {}
+};
+node x = 2.0;
+node y = 3.0;
+// Forward pass calculated here
+auto e_graph = log(x) * y + sin(x);
+// Calculate reverse pass
+e_graph.end().adj = 1.0;
+for (auto& node : e_graph | std::views::reverse) {
+    (*node)->chain();
+}
+assert(y.adj == 1.2103);
+assert(x.adj == 0.2516);
+\end{minted}
+\end{frame}
+
 \begin{comment}
-% Slide 1
 \begin{frame}{Forward Pass}
 \vspace{-1mm}
 $$z = \log(x*y)$$
@@ -603,7 +738,7 @@ $$z = \mathcolor{red}{\log}(x\cdot y)$$
   % Nodes
   \node[Gray, label=left:{\textcolor{blue}{$v_1$}}] (v0) at(0, 0) {$y$};
   \node[Gray, label=left:{\textcolor{blue}{$v_0$}}] (v1) at(-8, 0) {$x$};
-  \node[Round, label=left:{\textcolor{blue}{$v_2 = v_1 \cdot v_0$}}] (v2) at(-4, -2) {$\times$};
+  \node[Round, label=left:{\textcolor{blue}{$v_2 = v_1 \cdot v_0$}}] (v2) at(-4, -2) {$(\cdot)$};
   \node[Round, label=left:{\textcolor{blue}{$v_3 = \log{v_2}$}}] (v3) at(-4, -4) {$\mathcolor{red}{\log}$};
   % Lines
   \path [<-, draw, thick] (v2) -- (v0);
@@ -638,7 +773,7 @@ $$z = \mathcolor{red}{\log(x\cdot y)}$$
   % Nodes
   \node[Gray, label=left:{\textcolor{blue}{$v_1$}}] (v0) at(0, 0) {$y$};
   \node[Gray, label=left:{\textcolor{blue}{$v_0$}}] (v1) at(-8, 0) {$x$};
-  \node[Round, label=left:{\textcolor{blue}{$v_2 = v_1 \cdot v_0$}}] (v2) at(-4, -2) {$\times$};
+  \node[Round, label=left:{\textcolor{blue}{$v_2 = v_1 \cdot v_0$}}] (v2) at(-4, -2) {$(\cdot)$};
   \node[Round, label=left:{\textcolor{blue}{$v_3 = \log{v_2}$}},
     label=right:{\textcolor{red}{$\adj{v_3}=\pp{v_3}{v_3}=1$}}] (v3) at(-4, -4) {$\mathcolor{red}{\log}$};
   % Lines
@@ -662,7 +797,7 @@ $$z = \log(\mathcolor{red}{x\cdot y})$$
   \node[Gray, label=left:{\textcolor{blue}{$v_1$}}] (v0) at(0, 0) {$y$};
   \node[Gray, label=left:{\textcolor{blue}{$v_0$}}] (v1) at(-8, 0) {$x$};
   \node[Round, label=left:{\textcolor{blue}{$v_2 = v_1 \cdot v_0$}},
-    label=right:{\textcolor{red}{$\adj{v_2}=\adj{v_3}\pp{v_3}{v_2}=1\cdot \frac{1}{v_2}$}}] (v2) at(-4, -2) {$\times$};
+    label=right:{\textcolor{red}{$\adj{v_2}=\adj{v_3}\pp{v_3}{v_2}=1\cdot \frac{1}{v_2}$}}] (v2) at(-4, -2) {$(\cdot)$};
   \node[Round, label=left:{\textcolor{blue}{$v_3 = \log{v_2}$}},
     label=right:{\textcolor{red}{$\adj{v_3}=\pp{v_3}{v_3}=1$}}] (v3) at(-4, -4) {$\mathcolor{red}{\log}$};
   % Lines
@@ -687,7 +822,7 @@ $$z = \log(x\cdot \mathcolor{red}{y})$$
   \node[Gray, label=left:{\textcolor{blue}{$v_0$}},
     label=right:{\textcolor{red}{$\adj{v_0}=\adj{v_2}\pp{v_2}{v_0}=\adj{v_2}v_1$}}] (v1) at(-8, 0) {$x$};
   \node[Round, label=left:{\textcolor{blue}{$v_2 = v_1 \cdot v_0$}},
-    label=right:{\textcolor{red}{$\adj{v_2}=\adj{v_3}\pp{v_3}{v_2}=1\cdot \frac{1}{v_2}$}}] (v2) at(-4, -2) {$\times$};
+    label=right:{\textcolor{red}{$\adj{v_2}=\adj{v_3}\pp{v_3}{v_2}=1\cdot \frac{1}{v_2}$}}] (v2) at(-4, -2) {$(\cdot)$};
   \node[Round, label=left:{\textcolor{blue}{$v_3 = \log{v_2}$}},
     label=right:{\textcolor{red}{$\adj{v_3}=\pp{v_3}{v_3}=1$}}] (v3) at(-4, -4) {$\mathcolor{red}{\log}$};
   % Lines
@@ -713,7 +848,7 @@ $$z = \log(\mathcolor{red}{x}\cdot y)$$
   \node[Gray, label=left:{\textcolor{blue}{$v_0$}},
     label=right:{\textcolor{red}{$\adj{v_0}=\adj{v_2}\pp{v_2}{v_0}=\frac{1}{v_2}v_1$}}] (v1) at(-8, 0) {$x$};
   \node[Round, label=left:{\textcolor{blue}{$v_2 = v_1 \cdot v_0$}},
-    label=right:{\textcolor{red}{$\adj{v_2}=\adj{v_3}\pp{v_3}{v_2}=1\cdot \frac{1}{v_2}$}}] (v2) at(-4, -2) {$\times$};
+    label=right:{\textcolor{red}{$\adj{v_2}=\adj{v_3}\pp{v_3}{v_2}=1\cdot \frac{1}{v_2}$}}] (v2) at(-4, -2) {$(\cdot)$};
   \node[Round, label=left:{\textcolor{blue}{$v_3 = \log{v_2}$}},
     label=right:{\textcolor{red}{$\adj{v_3}=\pp{v_3}{v_3}=1$}}] (v3) at(-4, -4) {$\mathcolor{red}{\log}$};
   % Lines
@@ -739,7 +874,7 @@ $$z = \log(x\cdot y)$$
   \node[Gray, label=left:{\textcolor{blue}{$v_0$}},
     label=right:{\textcolor{red}{$\adj{v_0}=\adj{v_2}\pp{v_2}{v_0}=\frac{1}{v_2}v_1=\frac{1}{x}$}}] (v1) at(-8, 0) {$x$};
   \node[Round, label=left:{\textcolor{blue}{$v_2 = v_1 \cdot v_0$}},
-    label=right:{\textcolor{red}{$\adj{v_2}=\adj{v_3}\pp{v_3}{v_2}=1\cdot \frac{1}{v_2}$}}] (v2) at(-4, -2) {$\times$};
+    label=right:{\textcolor{red}{$\adj{v_2}=\adj{v_3}\pp{v_3}{v_2}=1\cdot \frac{1}{v_2}$}}] (v2) at(-4, -2) {$(\cdot)$};
   \node[Round, label=left:{\textcolor{blue}{$v_3 = \log{v_2}$}},
     label=right:{\textcolor{red}{$\adj{v_3}=\pp{v_3}{v_3}=1$}}] (v3) at(-4, -4) {$\mathcolor{red}{\log}$};
   % Lines
@@ -768,21 +903,22 @@ $$z = \log(x\cdot y)$$
          \end{itemize}
     \end{itemize}
 \end{frame}
+\note{..}
 
 \begin{frame}{How do we keep track of our reverse pass?}
 \begin{itemize}
-  \item Source code transformation
+  \item[] Source code transformation
     \begin{itemize}
-        \item Unroll all forward passes and reverse passes into one function
+        \item[-] Unroll all forward passes and reverse passes into one function
         \begin{itemize}
             \item[Good:] Fast
             \item[Bad:] Hard to implement, very restrictive
         \end{itemize}
     \end{itemize}
 
-    \item Operator Overloading
+    \item[] Operator Overloading
     \begin{itemize}
-        \item Nodes in the expression graph are objects which store a forward and reverse pass function
+        \item[-] Nodes in the expression graph are objects which store a forward and reverse pass function
         \begin{itemize}
           \item[Good:] Easier to implement, more flexible
           \item[Bad:] Less optimization opportunities
@@ -790,8 +926,9 @@ $$z = \log(x\cdot y)$$
     \end{itemize}
 \end{itemize}
 Newer AD packages use a combination of both
-\note{flexibility, performance, and developer time}
 \end{frame}
+\note{flexibility, performance, and developer time}
+
 \begin{frame}{How do we keep track of our reverse pass?}
 Static (Fast) vs. Dynamic (Flexible) graphs
 \begin{itemize}
@@ -800,112 +937,18 @@ Static (Fast) vs. Dynamic (Flexible) graphs
 \item How much time do I have? (Dynamic)
 \end{itemize}
 \end{frame}
+\note{..}
 
 \begin{frame}{Operator Overloading Approach}
 The operator overloading approach usually involves:
 \begin{itemize}
-    \item Tracking the expression graph of reverse pass function calls
-    \item A pair scalar type to hold the value and adjoint
+    \item Runtime "tape" for tracking expressions
+    \item Arena allocator for storing AD nodes
+    \item Pair scalar type to hold the value and adjoint
 \end{itemize}
-Allows conditional loops and reassignment of values in matrices\\
+%Allows conditional loops and reassignment of values in matrices\\
 \end{frame}
-
-
-\begin{frame}{Make A Tape}
-\vspace{-1mm}
-$$z = \log(x) \cdot y + \sin(x)$$
-
-\begin{tikzpicture}
-  [
-    Round/.style={circle, draw=black!, fill=green!0, thick, minimum size=2mm},
-    Red/.style={circle, draw=black!, fill=red!255, thick, minimum size=2mm},
-    Yellow/.style={circle, draw=black!, fill=yellow!255, thick, minimum size=10mm},
-    Gray/.style={circle, draw=black!, fill=gray!35, thick, minimum size=2mm}
-  ]
-  % Nodes
-  \node[Gray] (v1) at(-8, 0) {$y$};
-
-  \node[Gray] (v2) at(0, 0) {$x$};
-
-  \node[Round] (v3) at(-4, -2) {$\log$};
-
-  \node[Round] (v4) at(1, -2) {$\sin$};
-
-  \node[Round] (v5) at(-6, -4) {$\times$};
-
-  \node[Round] (v6) at(-3, -5.5) {$+$};
-
-
-  % Lines
-  \path [<-, draw, thick] (v5) -- (v1);
-  \path [<-, draw, thick] (v3) -- (v2);
-  \path [<-, draw, thick] (v4) -- (v2);
-  \path [<-, draw, thick] (v3) -- (v2);
-  \path [<-, draw, thick] (v6) -- (v4);
-  \path [<-, draw, thick] (v6) -- (v5);
-  \path [<-, draw, thick] (v5) -- (v3);
-
-\end{tikzpicture}
-\end{frame}
-
-\begin{frame}{Tape of Expression Graph}
-\begin{equation*}
-f(x, y) = \log(x)y + \sin(x)
-\end{equation*}
-\begin{figure}
-  \begin{tikzpicture}
-  [
-    Round/.style={circle, draw=black!, fill=green!0, thick, minimum size=2mm},
-    Red/.style={circle, draw=black!, fill=red!255, thick, minimum size=2mm},
-    Yellow/.style={circle, draw=black!, fill=yellow!255, thick, minimum size=10mm},
-    Gray/.style={circle, draw=black!, fill=gray!35, thick, minimum size=2mm}
-  ]
-  % Nodes
-  \node[Gray, label=right:{$v_0$}] (v2) at(0, 0) {$x$};
-  \node[Gray, label=right:{$v_2$}] (v1) at(2, 0) {$y$};
-  \node[Round, label=right:{$v_3$}] (v3) at(4, 0) {$\log$};
-  \node[Round, label=right:{$v_4$}] (v4) at(6, 0) {$\sin$};
-  \node[Round, label=right:{$v_5$}] (v5) at(8, 0) {$\times$};
-  \node[Round, label=right:{$v_6$}] (v6) at(10, 0) {$+$};
-
-
-  % Lines
-  \path [->, draw, thick] (v1) to[out=20,in=160] (v5);
-  \path [->, draw, thick] (v2) to[out=-20,in=-160] (v3);
-  \path [->, draw, thick] (v2) to[out=-20,in=-160] (v4);
-  \path [->, draw, thick] (v3) to[out=-20,in=-160] (v5);
-  \path [->, draw, thick] (v4) to[out=40,in=120] (v6);
-  \path [->, draw, thick] (v5) to[out=320,in=210] (v6);
-
-\end{tikzpicture}
-  \begin{tikzpicture}
-  [
-    Round/.style={circle, draw=black!, fill=green!0, thick, minimum size=2mm},
-    Red/.style={circle, draw=black!, fill=red!255, thick, minimum size=2mm},
-    Yellow/.style={circle, draw=black!, fill=yellow!255, thick, minimum size=10mm},
-    Gray/.style={circle, draw=black!, fill=gray!35, thick, minimum size=2mm}
-  ]
-  % Nodes
-  \node[Gray, label=right:{$v_0$}] (v2) at(0, 0) {$x$};
-  \node[Gray, label=right:{$v_2$}] (v1) at(2, 0) {$y$};
-  \node[Round, label=right:{$v_3$}] (v3) at(4, 0) {$\log$};
-  \node[Round, label=right:{$v_4$}] (v4) at(6, 0) {$\sin$};
-  \node[Round, label=right:{$v_5$}] (v5) at(8, 0) {$\times$};
-  \node[Round, label=right:{$v_6$}] (v6) at(10, 0) {$+$};
-
-
-  % Lines
-  \path [<-, draw, thick] (v1) to[out=20,in=160] (v5);
-  \path [<-, draw, thick] (v2) to[out=-20,in=-160] (v3);
-  \path [<-, draw, thick] (v2) to[out=-20,in=-160] (v4);
-  \path [<-, draw, thick] (v3) to[out=-20,in=-160] (v5);
-  \path [<-, draw=red, thick] (v4) to[out=40,in=120] (v6);
-  \path [<-, draw=red, thick] (v5) to[out=320,in=210] (v6);
-
-\end{tikzpicture}
-\caption{Topological sort of expression graph}
-\end{figure}
-\end{frame}
+\note{..}
 
 \begin{comment}
 \begin{frame}[fragile]{Cool graph math, how do we do this in a computer?}
@@ -1141,29 +1184,7 @@ void calc_grad(Tape& tape) {
 \end{frame}
 \end{comment}
 
-\begin{frame}[fragile]{Monotonic Buffer}
-\begin{minted}{C++}
-struct Tape {
-std::array<std::byte, (1 << 16)> buf;
-std::monotonic_buffer_resource mbr{buf.data(), buf.size()};
-std::polymorphic_allocator<std::byte> pa{&mbr};
-std::vector<var_impl*> tape;
-template <typename T, typename Types>
-auto* new_node(Types&&... args) {
-  auto* ret = pa.template new_object<T>(args...);
-  g_tape.tape.emplace_back(ret);
-  return ret;
-}
-void clear() {
-  tape.clear();
-  mbr.release();
-}
-};
-static Tape g_tape{};
-\end{minted}
-\end{frame}
-
-\begin{frame}[fragile]{Monotonic Buffer}
+\begin{frame}[fragile]{Operator Overloading: Basic Type}
 \begin{minted}{C++}
 struct var_impl {
   double val;
@@ -1172,27 +1193,33 @@ struct var_impl {
 }; // 24 bytes
 struct var {
   var_impl* vi_;
-  var(double val) :
-    vi_(g_tape.pa.template new_object<var_impl>(val)) {}
 }; // 8 bytes
 \end{minted}
-\begin{comment}
-\centering
-\begin{CacheLine}
-  % Color some blocks
-  \CacheMarkBelow{0}{var_impl\{dbl, dbl, vptr\}}
-  \CacheColor{0}{green!60}
-  \CacheColor{1}{green!60}
-  \CacheColor{2}{green!60}
-  \CacheMarkBelow{3}{var_impl\{dbl, dbl, vptr\}}
-  \CacheColor{3}{green!60}
-  \CacheColor{4}{green!60}
-  \CacheColor{5}{green!60}
-  \CacheColor{6}{red!60}
-  \CacheColor{7}{red!60}
-\end{CacheLine}
-\end{comment}
 \end{frame}
+\note{var\_impl is our base type all expression nodes inherit from}
+
+\begin{frame}[fragile]{Operator Overloading: Monotonic Buffer}
+\begin{minted}{C++}
+struct Tape {
+std::monotonic_buffer_resource mbr{(1 << 16)};
+std::polymorphic_allocator<std::byte> pa{&mbr};
+std::vector<var_impl*> tape;
+void clear() {
+  tape.clear();
+  mbr.release();
+}
+};
+static Tape g_tape{};
+template <typename T, typename Types>
+auto new_node(Types&&... args) {
+  auto* ret = g_tape.pa.template new_object<T>(args...);
+  g_tape.tape.push_back(ret);
+  return var{ret};
+}
+\end{minted}
+\end{frame}
+\note{..}
+
 \begin{comment}
 \begin{frame}[fragile]{Monotonic Buffer}
 \begin{minted}{C++}
@@ -1222,19 +1249,20 @@ inline var log(var x) {
 \end{CacheLine}
 \end{frame}
 \end{comment}
-\begin{frame}[fragile]{Monotonic Buffer}
+
+\begin{frame}[fragile]{Operator Overloading: Expression Node}
 \begin{minted}{C++}
 struct mul_vv : public var_impl {
   var op1_;
   var op2_;
   void chain() {
     op1_.adj() += this->adjoint_ * op2_.val();
-    op2_.adj() += this->adjoint_ * op1_.val();
+    op2_.adj += this->adjoint_ * op1_.val();
   }
 }; // 40 bytes
-operator*(var op1, var op2) {
-  return var{g_tape.template new_node<mul_vv>(
-    op1.val() * op2.val(), op1, op2)};
+var operator*(var op1, var op2) {
+  return new_node<mul_vv>(op1.val() * op2.val(),
+    op1, op2);
 }
 \end{minted}
 \begin{comment}
@@ -1253,6 +1281,19 @@ operator*(var op1, var op2) {
 \end{CacheLine}
 \end{comment}
 \end{frame}
+\note{..}
+
+\begin{frame}[fragile]{Operator Overloading: Reverse Pass}
+\begin{minted}[escapeinside=||]{C++}
+void grad(var& v) {
+  v.adj = 1.0;
+  for (auto&& x : tape | std::views::reverse) {
+    x->chain();
+  }
+}
+\end{minted}
+\end{frame}
+\note{..}
 
 \begin{frame}[fragile]{Monotonic Buffer}
 \begin{minted}[escapeinside=||]{C++}
@@ -1268,11 +1309,12 @@ for (int i = 0; i < 1e10; ++i) {
   var x = compute_x(...);
   var y = compute_y(...);
   compute_grads(x, y);
-  do_something_with_grads(x.adj(), y.adj());
+  do_something_with_grads(x.adj, y.adj);
   g_tape.clear();
 }
 \end{minted}
 \end{frame}
+\note{..}
 
 \begin{frame}[fragile]{So Many Operator Classes}
 \begin{minted}{C++}
@@ -1290,6 +1332,7 @@ struct divide_dv;
 struct divide_vd;
 \end{minted}
 \end{frame}
+\note{..}
 
 
 \begin{frame}[fragile]{Reduce Boilerplate}
@@ -1304,23 +1347,17 @@ struct callback_var_impl : public var_impl {
       rev_functor_(rev_functor) {}
   void chain() final { rev_functor_(*this); }
 }; // 24 + 8B * N
-// Helper for callback_var_impl
-template <std::floating_point FwdVal, typename F>
-auto lambda_var(FwdVal val, F&& rev_functor) {
-  return var(
-    g_tape.template new_node<callback_var_impl<F>>(
-      val,
-      std::forward<F>(rev_functor)));
-}
 \end{minted}
 \end{frame}
+\note{..}
 
 \begin{frame}[fragile]{Reduce Boilerplate}
 \begin{minted}[escapeinside=||]{C++}
 template <typename T1, typename T2>
 requires any_var<T1, T2>
 inline auto operator*(T1 op1, T2 op2) {
-  return lambda_var(value(op1) * value(op2),
+  return new_node<callback_var_impl>(
+    value(op1) * value(op2),
     [op1, op2](auto&& ret) mutable {
       if constexpr (is_var_v<T1>) {
         adjoint(op1) += adjoint(ret) * value(op2);
@@ -1332,6 +1369,7 @@ inline auto operator*(T1 op1, T2 op2) {
 }
 \end{minted}
 \end{frame}
+\note{..}
 
 \begin{frame}{Poor Cache Use}
 \begin{CacheLine}
@@ -1371,6 +1409,7 @@ inline auto operator*(T1 op1, T2 op2) {
   \CacheColor{7}{red!60}
 \end{CacheLine}
 \end{frame}
+\note{..}
 
 \begin{frame}[fragile]{Source Code Transform Ex:}
 \begin{minted}[escapeinside=||]{C++}
@@ -1388,6 +1427,7 @@ double bar_v1 = bar_v2 * v0;
 double bar_v0 = bar_v2 * v1;
 \end{minted}
 \end{frame}
+\note{..}
 
 \begin{frame}[fragile]{Source Code Transform Ex:}
 Code like the following very hard / impossible in source code transform
@@ -1397,6 +1437,7 @@ while(error < tolerance) {
 }
 \end{minted}
 \end{frame}
+\note{..}
 
 \begin{frame}[fragile]{Source Code Transform Ex:}
 \begin{minted}[escapeinside=||]{C++}
@@ -1408,6 +1449,7 @@ struct var {
 
 \end{minted}
 \end{frame}
+\note{..}
 
 \begin{frame}[fragile]{Source Code Transform Ex:}
 \begin{minted}[escapeinside=||]{C++}
@@ -1423,6 +1465,7 @@ struct expr {
 };
 \end{minted}
 \end{frame}
+\note{..}
 
 \begin{frame}[fragile]{Source Code Transform Ex:}
 \begin{minted}[escapeinside=||]{C++}
@@ -1441,6 +1484,7 @@ inline auto operator*(T1&& lhs, T2&& rhs) {
 }
 \end{minted}
 \end{frame}
+\note{..}
 
 \begin{frame}[fragile]{Source Code Transform Ex:}
 \begin{minted}[escapeinside=||]{C++}
@@ -1452,6 +1496,7 @@ auto z = x |{\mathcolor{red}{*}}| |{\mathcolor{cyan}{log}}|(y) |{\mathcolor{yell
    var>>
 \end{minted}
 \end{frame}
+\note{..}
 
 \begin{frame}[fragile]{Source Code Transform Ex:}
 \begin{minted}{C++}
@@ -1463,8 +1508,9 @@ inline void grad(Expr&& z) {
 }
 \end{minted}
 \centerline{\href{https://godbolt.org/z/veexMT5vz}{\textcolor{blue}{Example Godbolt}}}
-
 \end{frame}
+\note{..}
+
 \begin{comment}
   auto z = + (* x (log y)) (* (log (* x y)) y)
 \end{comment}
@@ -1487,6 +1533,7 @@ inline void grad(Expr&& z) {
   \end{tabular}
 \end{table}
 \end{frame}
+\note{..}
 
 \begin{frame}[fragile]{Operator Overloading Approach: Matrices}
 \begin{minted}{C++}
@@ -1495,6 +1542,7 @@ Matrix<var> X(M, M);
 Matrix<var> Z = X * B.transpose();
 \end{minted}
 \end{frame}
+\note{..}
 
 \begin{frame}[fragile]{Operator Overloading Approach: Matrices}
 \begin{minted}{C++}
@@ -1509,7 +1557,7 @@ struct arena_matrix :
 };
 \end{minted}
 \end{frame}
-
+\note{..}
 
 \begin{frame}[fragile]{Operator Overloading Approach: Matrices}
 \begin{minted}{C++}
@@ -1526,6 +1574,8 @@ struct var_impl<Matrix<double>> {
 \end{minted}
 \vspace{-8mm}
 \end{frame}
+\note{..}
+
 \begin{frame}[fragile]{Operator Overloading Approach: Matrices}
 \begin{minted}{C++}
 // Array of Structs
@@ -1542,6 +1592,8 @@ struct Matrix<var> {
     \end{itemize}
 \end{itemize}
 \end{frame}
+\note{..}
+
 \begin{frame}[fragile]{Operator Overloading Approach: Matrices}
 \begin{minted}{C++}
 // Struct of Arrays
@@ -1560,6 +1612,7 @@ struct var_impl<Matrix<double>> {
     \end{itemize}
 \end{itemize}
 \end{frame}
+\note{..}
 
 \begin{comment}
 \begin{frame}[fragile]{Operator Overloading Approach: Matrices}
@@ -1595,6 +1648,7 @@ inline auto operator*(T1&& op1, T2&& op2) {
 }
 \end{minted}
 \end{frame}
+\note{..}
 
 \begin{frame}[fragile]{Operator Overloading Approach: Matrices}
 \centering
@@ -1611,6 +1665,7 @@ inline auto operator*(T1&& op1, T2&& op2) {
   \CacheColor{7}{green!60}
 \end{CacheLine}
 \end{frame}
+\note{..}
 
 
 \begin{frame}{Matrix Multiplication Benchmark}
@@ -1619,6 +1674,7 @@ inline auto operator*(T1&& op1, T2&& op2) {
 \label{fig-matmul}
 \end{figure}
 \end{frame}
+\note{..}
 
 \begin{frame}[fragile]{Subset Assignment}
 \vspace{-1mm}
@@ -1673,7 +1729,7 @@ auto z = prod + sum(x);
 
 \end{tikzpicture}
 \end{frame}
-
+\note{..}
 
 \begin{frame}[fragile]{Subset Assignment}
 \vspace{-1mm}
@@ -1727,7 +1783,7 @@ auto z = prod + sum(x);
 
 \end{tikzpicture}
 \end{frame}
-
+\note{..}
 
 \begin{frame}[fragile]{Subset Assignment Becomes Very Hard}
 \begin{minted}{C++}
@@ -1749,6 +1805,7 @@ x.slice(1, 3) = x.head(3);
   \end{tabular}
 \end{table}
 \end{frame}
+\note{..}
 
 \begin{frame}[fragile]{Subset Assignment Becomes Very Hard}
 \begin{minted}{C++}
@@ -1772,7 +1829,7 @@ inline var<T>& operator=(const var<S>& other) {
 }
 \end{minted}
 \end{frame}
-
+\note{..}
 
 \begin{frame}{Thanks!}
 Repository for benchmarks and slides
@@ -1781,6 +1838,7 @@ Repository for benchmarks and slides
 \label{fig-qr-code}
 \end{figure}
 \end{frame}
+\note{..}
 
 \begin{comment}
 \begin{frame}{Embarassingly Parallel Not Possible}
