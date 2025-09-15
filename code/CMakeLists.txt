@@ -56,6 +56,7 @@ set(MATRIX_EXECUTABLES
     lambda_eigen
     lambda_eigen_special
     lambda_var_eigen
+    expr_template
 )
 
 foreach(exe ${MATRIX_EXECUTABLES})

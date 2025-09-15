@@ -43,7 +43,7 @@ struct has_scalar_trait<T, std::void_t<typename std::decay_t<T>::Scalar>>
 }  // namespace internal
 
 template <typename T>
-concept Matrix = is_eigen_v<std::decay_t<T>>;
+concept EigenMatrix = is_eigen_v<std::decay_t<T>>;
 
 
 }  // namespace ad

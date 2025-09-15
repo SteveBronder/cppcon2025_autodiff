@@ -19,7 +19,7 @@
 namespace ad {
 
 template <typename T>
-requires Matrix<T>
+requires EigenMatrix<T>
 struct var_base<T>  : public var_base_chain {
   arena_matrix<T> value_;
   arena_matrix<T> adjoint_;
@@ -29,25 +29,31 @@ struct var_base<T>  : public var_base_chain {
         adjoint_(value_.rows(), value_.cols()) {
     adjoint_.setZero();
   }
+  inline auto& val() {
+    return value_;
+  }
+  inline auto& adj() {
+    return adjoint_;
+  }
 };
 
 template <typename T>
 inline constexpr bool is_matrix_var = is_eigen_v<std::decay_t<T>> && is_var_v<typename std::decay_t<T>::Scalar>;
 template <typename T>
-inline constexpr bool is_var_matrix = is_eigen_v<typename std::decay_t<T>::value_type> && is_var_v<std::decay_t<T>>;
+inline constexpr bool is_var_matrix = is_eigen_v<typename std::decay_t<T>::value_type>;
 template <typename T>
-concept VarMatrix = Matrix<typename std::decay_t<T>::value_type> && is_var_v<std::decay_t<T>>;
+concept VarMatrix = EigenMatrix<typename std::decay_t<T>::value_type> && is_var_v<std::decay_t<T>>;
 template <typename... Types>
 concept AllVarMatrix = (VarMatrix<Types> && ...);
 
 
 template <typename T>
-concept MatrixVar = Matrix<T> && is_var_v<typename std::decay_t<T>::Scalar>;
+concept MatrixVar = EigenMatrix<T> && is_var_v<typename std::decay_t<T>::Scalar>;
 template <typename... Types>
 concept AllMatrixVar = (MatrixVar<Types> && ...);
 
 template <typename T>
-concept PlainMatrix = Matrix<T> && std::is_arithmetic_v<typename std::decay_t<T>::Scalar>;
+concept PlainMatrix = EigenMatrix<T> && std::is_arithmetic_v<typename std::decay_t<T>::Scalar>;
 
 template <typename T>
 concept RevMatrix = MatrixVar<T> || VarMatrix<T>;
@@ -56,14 +62,10 @@ inline decltype(auto) value(T&& x) {
   return x;
 }
 template <typename T1, typename T2>
-inline auto multiply(const T1& lhs, const T2& rhs) {
+inline auto multiply(T1&& lhs, T2&& rhs) {
   return make_var((value(lhs) * value(rhs)).eval(), [lhs, rhs](auto&& ret) mutable {
-    if constexpr (is_var_matrix<T1>) {
-      lhs.adj().array() += (ret.adj_op() * rhs.val_op().transpose()).array();
-    }
-    if constexpr (is_var_matrix<T2>) {
-      rhs.adj().array() += (ret.adj_op() * lhs.val_op().transpose()).array();
-    }
+      lhs.adj().array() += (ret.adj() * rhs.val().transpose()).array();
+      rhs.adj().array() += (ret.adj() * lhs.val().transpose()).array();
   });
 }
 template <typename T>
@@ -87,6 +89,8 @@ static void lambda_var_eigen(benchmark::State& state) {
     ad::var ret = ad::sum(ad::multiply(X1, X2));
     ad::grad(ret);
     benchmark::DoNotOptimize(ret);
+    benchmark::DoNotOptimize(X1);
+    benchmark::DoNotOptimize(X2);
     ad::clear_mem();
   }
 }

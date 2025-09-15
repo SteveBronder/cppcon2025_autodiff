@@ -6,7 +6,7 @@
 
 namespace ad {
 
-template <Matrix MatrixType>
+template <EigenMatrix MatrixType>
 class arena_matrix : public Eigen::Map<std::decay_t<MatrixType>> {
  public:
   using Scalar = typename std::decay_t<MatrixType>::Scalar;
@@ -78,7 +78,7 @@ class arena_matrix : public Eigen::Map<std::decay_t<MatrixType>> {
    * @tparam T An eigen type inheriting from `Eigen::EigenBase`
    * @param other A matrix that will be copied over to the arena allocator
    */
-  template <Matrix T>
+  template <EigenMatrix T>
   arena_matrix& operator=(const T& other) {
     new (this) Base(
         (Scalar*)pa.allocate_bytes(sizeof(Scalar) * other.size()),
