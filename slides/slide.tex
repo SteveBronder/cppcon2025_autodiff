@@ -1,11 +1,11 @@
 %Use 16:9
-\documentclass[dvipsnames]{beamer}
+\documentclass[dvipsnames, aspectratio=169]{beamer}
 \title{Reverse Mode Automatic Differentiation: Unraveling Expression Graphs \& Library Magic}
 \author{Steve Bronder}
 \date{September 2025}
-%\setbeameroption{show notes}
-%\setbeamertemplate{note page}{\pagecolor{yellow!5}\insertnote}\usepackage{palatino}
-%\setbeameroption{show notes on second screen=odd} % Both
+\setbeameroption{show notes}
+\setbeamertemplate{note page}{\pagecolor{yellow!5}\insertnote}\usepackage{palatino}
+\setbeameroption{show notes on second screen=right} % Both
 \AtBeginSection{
     \frame{\insertsectionhead}
 }
@@ -2181,7 +2181,7 @@ struct MatMul {
 \begin{frame}{Thanks!}
 Repository for benchmarks and slides
 \begin{figure}
-\centerline{\includegraphics[scale=.1]{img/qr-code.png}}
+\centerline{\includegraphics[scale=.075]{img/qr-code.png}}
 \label{fig-qr-code}
 \end{figure}
 \end{frame}
