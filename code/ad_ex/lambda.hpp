@@ -9,6 +9,8 @@
 #pragma once
 #include <stdint.h>
 
+#include <ad_ex/meta/fwd_decls.hpp>
+
 #include <cmath>
 #include <cstddef>
 #include <cstdlib>
@@ -40,9 +42,6 @@ struct var_base_chain {
   // Virtual hook that allows derived nodes to implement reverse propagation.
   virtual void chain() {};
 };
-// Forward declaration of the templated base implementation.
-template <typename T>
-struct var_base;
 
 /**
  * \brief Primary storage for scalar values and adjoints.

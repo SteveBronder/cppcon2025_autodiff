@@ -7,9 +7,9 @@
  * static reverse-mode system with manual memory management for composite
  * expressions.
  */
+#include <Eigen/Dense>
 #include <ad_ex/meta/is_eigen.hpp>
 #include <benchmark/benchmark.h>
-#include <Eigen/Dense>
 #include <cassert>
 #include <cstddef>
 #include <iostream>
@@ -17,7 +17,7 @@
 #include <vector>
 #define STRONG_INLINE __attribute__((always_inline, hot)) inline
 
-namespace ad{
+namespace ad {
 /**
  * \brief Helper selecting ownership semantics for expression nodes.
  *
@@ -26,25 +26,22 @@ namespace ad{
  *
  * @tparam T Expression type.
  */
-template <typename T>
-struct deduce_ownership {
+template <typename T> struct deduce_ownership {
   static constexpr bool value = std::is_rvalue_reference_v<T>;
-  using type = std::conditional_t<value,
-    std::remove_reference_t<T>, std::reference_wrapper<std::decay_t<T>>>;
+  using type = std::conditional_t<value, std::remove_reference_t<T>,
+                                  std::reference_wrapper<std::decay_t<T>>>;
 };
 template <typename T>
-using deduce_ownership_t = typename deduce_ownership<T&&>::type;
+using deduce_ownership_t = typename deduce_ownership<T &&>::type;
 
 namespace detail {
-  template <typename T>
-  struct is_ref_wrap : std::false_type {};
-  template <typename T>
-  struct is_ref_wrap<std::reference_wrapper<T>> : std::true_type {};
-}
+template <typename T> struct is_ref_wrap : std::false_type {};
+template <typename T>
+struct is_ref_wrap<std::reference_wrapper<T>> : std::true_type {};
+} // namespace detail
 template <typename T>
 struct is_ref_wrap : detail::is_ref_wrap<std::decay_t<T>> {};
-template <typename T>
-constexpr bool is_ref_wrap_v = is_ref_wrap<T>::value;
+template <typename T> constexpr bool is_ref_wrap_v = is_ref_wrap<T>::value;
 template <typename T>
 concept RefWrap = is_ref_wrap_v<T>;
 
@@ -55,8 +52,7 @@ concept RefWrap = is_ref_wrap_v<T>;
  * @param x Reference wrapper instance.
  * @return Underlying object.
  */
-template <RefWrap T>
-constexpr STRONG_INLINE auto&& get(T&& x) {
+template <RefWrap T> constexpr STRONG_INLINE auto &&get(T &&x) {
   return x.get();
 }
 
@@ -69,15 +65,10 @@ constexpr STRONG_INLINE auto&& get(T&& x) {
  * @param x Value to forward.
  * @return Forwarded value.
  */
-template <typename T>
-constexpr STRONG_INLINE auto&& get(T&& x) {
-  return x;
-}
+template <typename T> constexpr STRONG_INLINE auto &&get(T &&x) { return x; }
 
-template <typename T>
-struct Var;
-template <typename T>
-struct VarView;
+template <typename T> struct Var;
+template <typename T> struct VarView;
 
 /**
  * \brief View providing access to value and adjoint matrices.
@@ -85,31 +76,32 @@ struct VarView;
  * @tparam T Eigen matrix type.
  */
 template <typename T>
-requires EigenMatrix<T>
+  requires EigenMatrix<T>
 struct VarView<T> {
   using mat_t = std::decay_t<T>;
-  VarView(T& val, T& adj) : 
-  vals_(val.data(), val.rows(), val.cols()), adjs_(adj.data(), adj.rows(), adj.cols()) {}
+  VarView(T &val, T &adj)
+      : vals_(val.data(), val.rows(), val.cols()),
+        adjs_(adj.data(), adj.rows(), adj.cols()) {}
   Eigen::Map<T> vals_;
   Eigen::Map<T> adjs_;
 };
 
 /**
- * \brief Leaf node storing references to contiguous buffers for value and adjoint.
+ * \brief Leaf node storing references to contiguous buffers for value and
+ * adjoint.
  *
  * @tparam T Eigen matrix type.
  */
 template <typename T>
-requires EigenMatrix<T>
+  requires EigenMatrix<T>
 struct Var<T> {
- static constexpr std::size_t ops = 1;
- using mat_type = std::decay_t<T>;
+  static constexpr std::size_t ops = 1;
+  using mat_type = std::decay_t<T>;
   template <typename T1>
-  requires EigenMatrix<T1>
-  Var(T1&& init_value)
-      : rows_(init_value.rows()), cols_(init_value.cols()), 
-        value_ptr_(init_value.data()), adj_ptr_(nullptr) {
-  }
+    requires EigenMatrix<T1>
+  Var(T1 &&init_value)
+      : rows_(init_value.rows()), cols_(init_value.cols()),
+        value_ptr_(init_value.data()), adj_ptr_(nullptr) {}
   /**
    * \brief Constructs a variable with both value and adjoint buffers.
    *
@@ -119,10 +111,9 @@ struct Var<T> {
    * @param init_adjoint Initial adjoint matrix.
    */
   template <typename T1, typename T2>
-  Var(T1&& init_value, T2&& init_adjoint)
-      : rows_(init_value.rows()), cols_(init_value.cols()), 
-        value_ptr_(init_value.data()), adj_ptr_(init_adjoint.data()) {
-  }
+  Var(T1 &&init_value, T2 &&init_adjoint)
+      : rows_(init_value.rows()), cols_(init_value.cols()),
+        value_ptr_(init_value.data()), adj_ptr_(init_adjoint.data()) {}
   /**
    * \brief Constructs an unbound variable with the specified dimensions.
    *
@@ -130,18 +121,18 @@ struct Var<T> {
    * @param cols Number of columns.
    */
   Var(Eigen::Index rows, Eigen::Index cols)
-      : rows_(rows), cols_(cols),
-        value_ptr_(nullptr), adj_ptr_(nullptr) {
-  }
+      : rows_(rows), cols_(cols), value_ptr_(nullptr), adj_ptr_(nullptr) {}
 
   // Memory sizing (in number of doubles).
-  constexpr STRONG_INLINE std::pair<std::size_t, std::size_t> cache_bind_size() const {
+  constexpr STRONG_INLINE std::pair<std::size_t, std::size_t>
+  cache_bind_size() const {
     return {0, rows_ * cols_};
   }
 
   // bind this node to segments within the provided contiguous buffers.
-  constexpr STRONG_INLINE void bind(double *__restrict values_base, double *__restrict adjs_base,
-            std::size_t& v_off, std::size_t& a_off) {
+  constexpr STRONG_INLINE void bind(double *__restrict values_base,
+                                    double *__restrict adjs_base,
+                                    std::size_t &v_off, std::size_t &a_off) {
     adj_ptr_ = adjs_base + a_off;
     a_off += static_cast<std::size_t>(rows_) * cols_;
   }
@@ -151,22 +142,19 @@ struct Var<T> {
    *
    * @return Eigen map referencing the value buffer.
    */
-  STRONG_INLINE constexpr auto f_eval() {
-    return this->value_map();
-  }
+  STRONG_INLINE constexpr auto f_eval() { return this->value_map(); }
 
   // b_eval: leaf (no children).
-  template <typename TT>
-  STRONG_INLINE constexpr void b_eval(TT&& seed) {
+  template <typename TT> STRONG_INLINE constexpr void b_eval(TT &&seed) {
     this->adjoint_map().noalias() += std::forward<TT>(seed);
   }
 
   // Access mapped views (created on demand).
-  STRONG_INLINE auto value_map() { 
-    return Eigen::Map<const Eigen::MatrixXd>(value_ptr_, rows_, cols_); 
+  STRONG_INLINE auto value_map() {
+    return Eigen::Map<const Eigen::MatrixXd>(value_ptr_, rows_, cols_);
   }
-  STRONG_INLINE auto adjoint_map() { 
-    return Eigen::Map<Eigen::MatrixXd>(adj_ptr_, rows_, cols_); 
+  STRONG_INLINE auto adjoint_map() {
+    return Eigen::Map<Eigen::MatrixXd>(adj_ptr_, rows_, cols_);
   }
 
   STRONG_INLINE Eigen::Index rows() const { return rows_; }
@@ -174,8 +162,8 @@ struct Var<T> {
 
   Eigen::Index rows_;
   Eigen::Index cols_;
-  double *__restrict value_ptr_;     // bound at bind()
-  double *__restrict adj_ptr_;       // bound at bind()
+  double *__restrict value_ptr_; // bound at bind()
+  double *__restrict adj_ptr_;   // bound at bind()
 };
 
 /**
@@ -188,7 +176,7 @@ struct Var<T> {
  * @return Tuple containing the requested slice.
  */
 template <std::size_t start, std::size_t slice_size, typename... Args>
-[[nodiscard]] STRONG_INLINE constexpr auto slice_param_pack(Args&&... args) {
+[[nodiscard]] STRONG_INLINE constexpr auto slice_param_pack(Args &&...args) {
   // Materialize decayed copies/moves to avoid dangling references.
   auto values = std::forward_as_tuple(std::forward<Args>(args)...);
   return [&]<std::size_t... I>(std::index_sequence<I...>) {
@@ -196,15 +184,13 @@ template <std::size_t start, std::size_t slice_size, typename... Args>
   }(std::make_index_sequence<slice_size>{});
 }
 
-
 /**
  * \brief Binary expression node implementing matrix multiplication.
  *
  * @tparam Left Left operand type.
  * @tparam Right Right operand type.
  */
-template <typename Left, typename Right>
-struct MatMul {
+template <typename Left, typename Right> struct MatMul {
   using Left_ = std::decay_t<Left>;
   using Right_ = std::decay_t<Right>;
   static constexpr std::size_t ops = 2;
@@ -217,11 +203,10 @@ struct MatMul {
    * @param right Right operand.
    */
   template <typename L, typename R>
-  MatMul(L&& left, R&& right)
+  MatMul(L &&left, R &&right)
       : left_(std::forward<L>(left)), right_(std::forward<R>(right)),
-        rows_(left_.rows()), cols_(right_.cols()),
-        value_ptr_(nullptr), adj_ptr_(nullptr) {
-  }
+        rows_(left_.rows()), cols_(right_.cols()), value_ptr_(nullptr),
+        adj_ptr_(nullptr) {}
 
   STRONG_INLINE std::pair<std::size_t, std::size_t> cache_bind_size() const {
     // Own storage + children.
@@ -231,8 +216,9 @@ struct MatMul {
     return {n + lv + rv, n + la + ra};
   }
 
-  STRONG_INLINE void bind(double *__restrict values_base, double *__restrict adjs_base,
-            std::size_t& v_off, std::size_t& a_off) {
+  STRONG_INLINE void bind(double *__restrict values_base,
+                          double *__restrict adjs_base, std::size_t &v_off,
+                          std::size_t &a_off) {
     // bind children first (any order is fine) then self.
     left_.bind(values_base, adjs_base, v_off, a_off);
     right_.bind(values_base, adjs_base, v_off, a_off);
@@ -243,11 +229,11 @@ struct MatMul {
   }
   STRONG_INLINE auto f_eval() {
     // value = left.value * right.value
-    return Eigen::Map<Eigen::MatrixXd>(value_ptr_, rows_, cols_).noalias() = left_.f_eval() * right_.f_eval();
+    return Eigen::Map<Eigen::MatrixXd>(value_ptr_, rows_, cols_).noalias() =
+               left_.f_eval() * right_.f_eval();
   }
 
-  template <typename TT>
-  STRONG_INLINE void b_eval(TT&& seed) {
+  template <typename TT> STRONG_INLINE void b_eval(TT &&seed) {
     // Propagate: dL += dC * R^T ; dR += L^T * dC
     this->adjoint_map().array() += seed;
     auto l_adj = this->adjoint_map() * right_.value_map().transpose();
@@ -256,8 +242,12 @@ struct MatMul {
     right_.b_eval(std::move(r_adj));
   }
 
-  STRONG_INLINE auto value_map() { return Eigen::Map<Eigen::MatrixXd>(value_ptr_, rows_, cols_); }
-  STRONG_INLINE auto adjoint_map() { return Eigen::Map<Eigen::MatrixXd>(adj_ptr_, rows_, cols_); }
+  STRONG_INLINE auto value_map() {
+    return Eigen::Map<Eigen::MatrixXd>(value_ptr_, rows_, cols_);
+  }
+  STRONG_INLINE auto adjoint_map() {
+    return Eigen::Map<Eigen::MatrixXd>(adj_ptr_, rows_, cols_);
+  }
 
   STRONG_INLINE Eigen::Index rows() const { return rows_; }
   STRONG_INLINE Eigen::Index cols() const { return cols_; }
@@ -275,9 +265,8 @@ struct MatMul {
  *
  * @tparam Child Child expression type.
  */
-template <typename Child>
-struct Sum {
- static constexpr std::size_t ops = 1;
+template <typename Child> struct Sum {
+  static constexpr std::size_t ops = 1;
   /**
    * \brief Constructs a summation node from its child.
    *
@@ -285,31 +274,26 @@ struct Sum {
    * @param child Child expression.
    */
   template <typename T>
-  explicit Sum(T&& child)
-      : child_(std::forward<T>(child)), val_(0), adj_(0) {}
+  explicit Sum(T &&child) : child_(std::forward<T>(child)), val_(0), adj_(0) {}
 
   // Total storage: 1 for value + child; 1 for adjoint + child.
   STRONG_INLINE std::pair<std::size_t, std::size_t> cache_bind_size() const {
     return child_.cache_bind_size();
   }
 
-  STRONG_INLINE void bind(double *__restrict values_base, double *__restrict adjs_base,
-            std::size_t& v_off, std::size_t& a_off) {
+  STRONG_INLINE void bind(double *__restrict values_base,
+                          double *__restrict adjs_base, std::size_t &v_off,
+                          std::size_t &a_off) {
     child_.bind(values_base, adjs_base, v_off, a_off);
   }
-  STRONG_INLINE auto f_eval() {
-    return val_ = child_.f_eval().sum();
-  }
-  template <typename TT>
-  STRONG_INLINE void b_eval(TT&& seed) {
+  STRONG_INLINE auto f_eval() { return val_ = child_.f_eval().sum(); }
+  template <typename TT> STRONG_INLINE void b_eval(TT &&seed) {
     adj_ += seed;
     child_.b_eval(seed);
   }
 
   // We really need a reset function, but for this toy example this is fine
-  STRONG_INLINE void reset_adjoint() {
-    adj_ = 0.0;
-  }
+  STRONG_INLINE void reset_adjoint() { adj_ = 0.0; }
 
   std::decay_t<Child> child_;
   double val_;
@@ -324,7 +308,7 @@ struct Sum {
  * @return Pair of counts for values and adjoints respectively.
  */
 template <typename Expr>
-STRONG_INLINE std::pair<std::size_t, std::size_t> cache_bind_size(Expr&& expr) {
+STRONG_INLINE std::pair<std::size_t, std::size_t> cache_bind_size(Expr &&expr) {
   return expr.cache_bind_size();
 }
 
@@ -337,7 +321,8 @@ STRONG_INLINE std::pair<std::size_t, std::size_t> cache_bind_size(Expr&& expr) {
  * @param adjs_base Pointer to the adjoint buffer.
  */
 template <typename Expr>
-STRONG_INLINE void bind(Expr&& expr, double *__restrict values_base, double *__restrict adjs_base) {
+STRONG_INLINE void bind(Expr &&expr, double *__restrict values_base,
+                        double *__restrict adjs_base) {
   std::size_t v_off = 0, a_off = 0;
   expr.bind(values_base, adjs_base, v_off, a_off);
 }
@@ -348,8 +333,7 @@ STRONG_INLINE void bind(Expr&& expr, double *__restrict values_base, double *__r
  * @tparam Expr Expression type.
  * @param expr Expression to evaluate.
  */
-template <typename Expr>
-STRONG_INLINE void AutoDiff(Expr&& expr) {
+template <typename Expr> STRONG_INLINE void AutoDiff(Expr &&expr) {
   expr.f_eval();
   expr.reset_adjoint();
   expr.b_eval(1.0);
@@ -365,7 +349,7 @@ STRONG_INLINE void AutoDiff(Expr&& expr) {
  * @return Matrix multiplication node.
  */
 template <typename Op1, typename Op2>
-STRONG_INLINE auto operator*(Op1&& left, Op2&& right) {
+STRONG_INLINE auto operator*(Op1 &&left, Op2 &&right) {
   return MatMul<Op1, Op2>(std::forward<Op1>(left), std::forward<Op2>(right));
 }
 
@@ -376,23 +360,22 @@ STRONG_INLINE auto operator*(Op1&& left, Op2&& right) {
  * @param child Child expression.
  * @return Summation node.
  */
-template <typename Op>
-STRONG_INLINE auto sum(Op&& child) {
+template <typename Op> STRONG_INLINE auto sum(Op &&child) {
   return Sum<Op>(std::forward<Op>(child));
 }
 
-
-}
+} // namespace ad
 
 /**
- * \brief Benchmark exercising the expression-template automatic differentiation system.
+ * \brief Benchmark exercising the expression-template automatic differentiation
+ * system.
  *
- * Each iteration binds contiguous storage for the expression graph, performs the
- * forward and reverse passes, and resets the adjoint buffer.
+ * Each iteration binds contiguous storage for the expression graph, performs
+ * the forward and reverse passes, and resets the adjoint buffer.
  *
  * @param state Google Benchmark harness state controlling repetitions.
  */
-static void expr_template(benchmark::State& state) {
+static void expr_template(benchmark::State &state) {
   // Dynamic inputs (2x2 here; any MxK and KxN will work).
   Eigen::MatrixXd A0 = Eigen::MatrixXd::Random(state.range(0), state.range(0));
   Eigen::MatrixXd B0 = Eigen::MatrixXd::Random(state.range(0), state.range(0));
@@ -417,4 +400,4 @@ static void expr_template(benchmark::State& state) {
     adjs.setZero();
   }
 }
-BENCHMARK(expr_template)-> RangeMultiplier(2) -> Range(1, 4096);
+BENCHMARK(expr_template)->RangeMultiplier(2)->Range(1, 4096);

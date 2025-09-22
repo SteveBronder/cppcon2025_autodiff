@@ -1,3 +1,4 @@
+#pragma once
 /**
  * \file
  * \brief Configuration header enabling Eigen support for the custom AD scalars.

@@ -1,6 +1,8 @@
 #ifndef STAN_MATH_REV_CORE_EIGEN_NUMTRAITS_HPP
 #define STAN_MATH_REV_CORE_EIGEN_NUMTRAITS_HPP
 
+#include <ad_ex/meta/fwd_decls.hpp>
+#include <ad_ex/lambda.hpp>
 #include <ad_ex/meta/Eigen.hpp>
 #include <limits>
 
