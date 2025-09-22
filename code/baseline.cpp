@@ -1,4 +1,11 @@
-// Type your code here, or load an example.
+/**
+ * \file
+ * \brief Baseline benchmark evaluating the analytic expression without automatic differentiation.
+ *
+ * The implementation in this file computes the primal and analytic derivatives
+ * directly using doubles, providing a point of comparison for the automatic
+ * differentiation implementations in the other benchmarks.
+ */
 #include <stdint.h>
 
 #include <cmath>
@@ -14,6 +21,15 @@
 #include <functional>
 #include <benchmark/benchmark.h>
 
+/**
+ * \brief Benchmark that evaluates the expression without automatic differentiation.
+ *
+ * The benchmark computes the primal expression and the manually derived
+ * sensitivities to quantify the baseline computational cost absent any AD data
+ * structures.
+ *
+ * @param state Google Benchmark harness state controlling repetitions.
+ */
 static void baseline_bench(benchmark::State& state) {
     double x(2.0);
     double y(4.0);

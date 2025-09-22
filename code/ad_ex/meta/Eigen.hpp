@@ -1,3 +1,11 @@
+/**
+ * \file
+ * \brief Configuration header enabling Eigen support for the custom AD scalars.
+ *
+ * The definitions here register Eigen plugin hooks and scalar traits that allow
+ * the lambda-based reverse-mode variables to participate seamlessly in Eigen
+ * expressions.
+ */
 #ifndef STAN_MATH_PRIM_FUN_EIGEN_HPP
 #define STAN_MATH_PRIM_FUN_EIGEN_HPP
 #include <stdexcept>

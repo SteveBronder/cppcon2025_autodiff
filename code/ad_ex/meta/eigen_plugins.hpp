@@ -1,11 +1,12 @@
 /**
- * Reimplements is_fvar without requiring external math headers
  *
  * decltype((void)(T::d_)) is a pre C++17 replacement for
  * std::void_t<decltype(T::d_)>
  *
- * TODO(Andrew): Replace with std::void_t after move to C++17
- */
+ * The helpers declared here replicate a subset of Stan Math's Eigen plugin
+ * functionality so that Eigen matrices composed of lambda-based variables can
+ * access values and adjoints in a coefficient-wise manner.
+ */ 
 template<class, class = void>
 struct is_fvar : std::false_type
 { };
